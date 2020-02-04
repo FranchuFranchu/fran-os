@@ -23,21 +23,23 @@ VGA_COLOR_WHITE equ 15
 
 
 ; IN = dl: y, dh: x
-; OUT = dx: Index with offset 0xB8000 at VGA buffer
+; OUT = edx: Index with offset 0xB8000 at VGA buffer
 ; Other registers preserved
 os_terminal_getidx:
     push eax; preserve registers
+    push ebx
+    ;xchg dl, dh
 
-    shl dh, 1 ; multiply by two because every entry is a word that takes up 2 bytes
 
-    mov eax, VGA_WIDTH
+    mov al, VGA_WIDTH
     mul dl
-    mov edx, eax
 
-    shl dl, 1 ; same
-    add dl, dh
-    mov dh, 0
+    shr dx, 8
+    add dx, ax
 
+    shl edx, 1 ; Multiply by 2 because each entry takes up 2 bytes
+
+    pop ebx
     pop eax
     ret
 
@@ -69,7 +71,10 @@ os_terminal_putentryat:
 
 ; IN = al: ASCII char
 os_terminal_putchar:
+    pusha
     mov dx, [os_terminal_cursor_pos] ; This loads os_terminal_column at DH, and os_terminal_row at DL
+    mov dh, [os_terminal_column]
+    mov dl, [os_terminal_row]
 
     cmp al, 0xA
     je .nextline
@@ -92,8 +97,30 @@ os_terminal_putchar:
 
 .cursor_moved:
     ; Store new cursor position 
+
+    mov cx, dx
+
+    mov dx, 0x03D4
+    mov al, 0x0F
+    out dx, al
+ 
+    mov dx, 0x03D5
+    mov al, ch
+    out dx, al
+ 
+    mov dx, 0x03D4
+    mov al, 0x0E
+    out dx, al
+ 
+    mov dx, 0x03D5
+    mov al, cl
+    out dx, al
+
+    mov dx, cx
+    
     mov [os_terminal_column], dh
     mov [os_terminal_row], dl
+    popa
 
     ret
 

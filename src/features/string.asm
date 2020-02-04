@@ -17,7 +17,7 @@ os_string_convert_1hex:
 
 .number:
     pop ax
-    add al, ("0")
+    add al, "0"
 
 .done:
     ret

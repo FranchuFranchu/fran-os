@@ -87,10 +87,10 @@ os_idt_setup:
 ; Clears all masks
 pic_clear_mask:
     in al, PIC1_DATA
-    and al, 0xFD
+    and al, 0x0
     out PIC1_DATA, al
     in al, PIC2_DATA
-    and al, 0xFD
+    and al, 0x0
     out PIC2_DATA, al
     ret
 

@@ -8,42 +8,33 @@ BITS 32
 %include "features/string.asm"
 %include "features/gdt.asm"
 %include "features/idt.asm"
+%include "features/eventqueue.asm"
+%include "features/font.asm"
 
 global kernel_main
 kernel_main:
 
-
     call os_idt_setup
-
     call os_keyboard_setup
-
-    mov eax, os_unhandled_interrupt
-    mov ebx, 20h
-    call os_define_interrupt
+    call os_eventqueue_setup
+    call os_font_setup
 
     mov dh, VGA_COLOR_LIGHT_GREY
     mov dl, VGA_COLOR_BLACK
     call os_terminal_set_color
+    mov al, "A"
+    mov dh, 1
+    mov dl, 2
+    call os_terminal_putentryat
 
-    mov cx, 0
 
-    mov byte [0xB8400], "s "
-
-    ;jmp .halt
-
-    .printkeys:
-    call os_terminal_putchar
-    inc cx
-    mov al, cl
-    call os_string_convert_1hex
-    call os_terminal_putchar
-    cmp cx, 64
-    jne .printkeys
-    
     sti
+
     .halt:
     hlt
     jmp .halt
+
+    ret
     
 ; Ignored interrupt
 os_unhandled_interrupt:
@@ -52,7 +43,6 @@ os_unhandled_interrupt:
     out 20h,al  ; acknowledge the interrupt to the PIC
     pop eax     ; restore state
     iret
-
 
 
     
