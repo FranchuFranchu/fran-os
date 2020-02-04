@@ -20,7 +20,31 @@ VGA_COLOR_LIGHT_MAGENTA equ 13
 VGA_COLOR_LIGHT_BROWN equ 14
 VGA_COLOR_WHITE equ 15
 
+; IN = dx: Output of os_terminal_getidx
+os_vga_update_cursor:
+    pusha
 
+    mov bx, dx
+    shr bx, 1 ; Un-multiply by 2
+
+    mov dx, 0x03D4
+    mov al, 0x0F
+    out dx, al
+ 
+    mov dx, 0x03D5
+    mov al, bl
+    out dx, al
+ 
+    mov dx, 0x03D4
+    mov al, 0x0E
+    out dx, al
+ 
+    mov dx, 0x03D5
+    mov al, bh
+    out dx, al
+
+    popa
+    ret
 
 ; IN = dl: y, dh: x
 ; OUT = edx: Index with offset 0xB8000 at VGA buffer
@@ -89,6 +113,8 @@ os_terminal_putchar:
     mov dh, 0
     inc dl
 
+
+
     cmp dl, VGA_HEIGHT
     jne .cursor_moved
 
@@ -96,30 +122,14 @@ os_terminal_putchar:
 
 
 .cursor_moved:
-    ; Store new cursor position 
+    ; Store new cursor position
 
-    mov cx, dx
-
-    mov dx, 0x03D4
-    mov al, 0x0F
-    out dx, al
- 
-    mov dx, 0x03D5
-    mov al, ch
-    out dx, al
- 
-    mov dx, 0x03D4
-    mov al, 0x0E
-    out dx, al
- 
-    mov dx, 0x03D5
-    mov al, cl
-    out dx, al
-
-    mov dx, cx
-    
     mov [os_terminal_column], dh
     mov [os_terminal_row], dl
+
+    call os_terminal_getidx
+    call os_vga_update_cursor
+
     popa
 
     ret
@@ -174,6 +184,9 @@ os_terminal_write_string:
     call os_terminal_strlen
     call os_terminal_write
     popa
+    ret
+
+os_terminal_setup:
     ret
 
 section .data

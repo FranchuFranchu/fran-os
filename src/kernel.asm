@@ -18,6 +18,7 @@ kernel_main:
     call os_keyboard_setup
     call os_eventqueue_setup
     call os_font_setup
+    call os_terminal_setup
 
     mov dh, VGA_COLOR_LIGHT_GREY
     mov dl, VGA_COLOR_BLACK
