@@ -9,6 +9,7 @@ BITS 32
 %include "features/gdt.asm"
 %include "features/idt.asm"
 %include "features/eventqueue.asm"
+%include "features/exception_handler.asm"
 %include "features/font.asm"
 
 global kernel_main
@@ -19,6 +20,7 @@ kernel_main:
     call os_eventqueue_setup
     call os_font_setup
     call os_terminal_setup
+    call os_exception_handler_setup
 
     mov dh, VGA_COLOR_LIGHT_GREY
     mov dl, VGA_COLOR_BLACK
@@ -29,9 +31,16 @@ kernel_main:
     call os_terminal_putentryat
 
 
-    sti
 
-    .halt:
+os_sleep:
+    sti
+.sleep:
+    hlt
+    jmp .sleep
+
+os_halt:
+    cli
+.halt:
     hlt
     jmp .halt
 

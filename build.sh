@@ -16,8 +16,8 @@ if grub-file --is-x86-multiboot os.bin; then
 
     mkdir -p isodir/boot/grub
     cp os.bin isodir/boot/os.bin
-    grub-mkrescue -o os.iso isodir
-    qemu-system-i386 -cdrom os.iso -d cpu_reset,int -D log.log
+    grub-mkrescue -o os.img isodir
+    qemu-system-i386 -hda os.img -d cpu_reset,int -D log.log
     #bochs -q
 else
   echo the file is not multiboot
