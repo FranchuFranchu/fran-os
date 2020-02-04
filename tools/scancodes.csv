@@ -1,0 +1,35 @@
+Scan code,Base case,Upper case,Scan code,Base case,Upper case,Scan code,Base case,Upper case
+29,`,~,02,1,!,03,2,@
+04,3,#,05,4,$,06,5,%
+07,6,^,08,7,&,09,8,*
+0A,9,(,0B,0,),0C,-,_
+0D,=,+,0E,Backspace,Backspace,0F,Tab,Back Tab
+10,q,Q,11,w,W,12,e,E
+13,r,R,14,t,T,15,y,Y
+16,u,U,17,i,I,18,o,O
+19,p,P,1A,[,{,1B,],}
+2B,\,|,3A note 1,Caps Lock,na,1E,a,A
+1F,s,S,20,d,D,21,f,F
+22,g,G,23,h,H,24,j,J
+25,k,K,26,l,L,27,;,:
+28,',"""",2B note 2,#,~,1C,Enter,Enter
+2A note 1,Left Shift,na,D5 note 2,\,|,2C,z,Z
+2D,x,X,2E,c,C,2F,v,V
+30,b,B,31,n,N,32,m,M
+33,",",<,34,.,>,35,/,?
+36 note 1,Right shift,na,1D note 1,Left Ctrl,na,38 note 1,Left Alt,na
+39,Spacebar,Spacebar,"E0,38 note 1",Right Alt,na,"E0,1D note 1",Right Ctrl,na
+"E0,52",Insert,na,"E0,53",Delete,na,"E0,4B",Left Arrow,na
+"E0,47",Home,na,"E0,4F",End,na,"E0,48",Up Arrow,na
+"E0,49",Pg Up,na,"E0,51",Pg Dn,na,"E0,4D",Right Arrow,na
+"45,C5 note 1",Num Lock,na,47,Keypad 7,Home,4B,Keypad 4,Left Arrow
+4F,Keypad 1,End,"E0,35",Keypad /,Keypad /,48,Keypad 8,Up Arrow
+4C,Keypad 5,na,50,Keypad 2,Dn Arrow,52,Keypad 0,Insert
+"E0,37",Keypad *,Keypad *,49,Keypad 9,Pg Up,4D,Keypad 6,Right Arrow
+51,Keypad 3,Pg Dn,53,Keypad .,Delete,4A,Keypad -,Keypad -
+4E,Keypad +,Keypad +,"E0,1C",Keypad Enter,Keypad Enter,01,Escape,Escape
+3B,F1,note 3,3C,F2,note 3,3D,F3,note 3
+3E,F4,note 3,3F,F5,note 3,40,F6,note 3
+41,F7,note 3,42,F8,note 3,43,F9,note 3
+44,F10,note 3,D9,F11,note 3,DA,F12,note 3
+"2A,37","Prnt, Scrn",na,46,Scroll Lock,na,,,
