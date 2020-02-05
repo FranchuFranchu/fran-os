@@ -19,6 +19,12 @@ for i in range(256):
     g = lowercase.get(i)
     s += "\t.c{:0>2}: db {:<4}".format(hex(i)[2:], '"' + g + '"' if len(str(g)) == 1 else 0) + "\t; " + str(g) + "\n"
 
+lowercase = {v: k for k, v in lowercase.items()}
+s = "ascii_to_uppercase:\n"
+for i in range(256):
+    g = uppercase.get(lowercase.get(chr(i)))
+    s += "\t.c{:0>2}: db {:<4}".format(hex(i)[2:], '"' + g + '"' if len(str(g)) == 1 else 0) + "\t; " + str(g) + "\n"
+
 with open("scancodes.asm", "w") as f:
     f.write(s)
 
