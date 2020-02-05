@@ -110,6 +110,8 @@ os_keyboard_keydown:
     jne .else
     mov al, 0xFF
     .else:
+
+
     call os_terminal_putchar
     ret
 

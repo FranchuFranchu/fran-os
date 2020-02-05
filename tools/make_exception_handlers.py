@@ -8,9 +8,9 @@ FMT_SETUP = '''
 
 FMT_STR = '''
 os_exception_handler_{hexcode:0>2}:{pop_error_code}
-    mov esi, .errmsg{print_eax}
-    call os_exception_handler_print_string
+    
     {todonext}
+
     .errmsg db "Exception 0x{hexcode:0>2}: {name}",0
     .errmsgend:
     times 8 db 0 ; Allocate space for error code (if necessary)
@@ -23,9 +23,39 @@ PRINT_EAX_TEXT = '''
     mov ebx, .errmsgend
     call os_exception_handler_insert_eax'''
 
-ABORT_TEXT = "\n\tjmp os_halt\n"
-TRAP_TEXT = ABORT_TEXT
-FAULT_TEXT = ABORT_TEXT
+ABORT_TEXT = '''
+    call os_terminal_clear_screen
+    mov bl, 0x4F
+
+    mov esi, .errmsg
+    mov edi, 0xB8000
+    call os_exception_handler_print_string
+
+    mov esi, .errmsg2
+    mov edi, 0xB8000 + VGA_WIDTH * 2 * 2
+    call os_exception_handler_print_string
+
+    mov esi, .errmsg3
+    mov edi, 0xB8000 + VGA_WIDTH * 2 * 3
+    call os_exception_handler_print_string
+
+    jmp os_halt
+
+    .errmsg2 db "This error is fatal.",0
+    .errmsg3 db "Shutdown your computer manually.",0
+    '''
+FAULT_TEXT = '''
+    call os_terminal_clear_screen
+
+    mov esi, .errmsg
+    mov edi, 0xB8000
+    mov bl, 0x4F
+    call os_exception_handler_print_string
+
+    call os_exception_fault
+    iret
+'''
+TRAP_TEXT = FAULT_TEXT
 
 TYPE_TEXTS = {
     "Abort": ABORT_TEXT,
@@ -51,6 +81,88 @@ for row in l:
 
 setups = """
 
+os_exception_fault:
+
+    mov bl, 0x4F
+    mov esi, .errmsg2
+    mov edi, 0xB8000 + VGA_WIDTH * 2 * 2
+    call os_exception_handler_print_string
+
+    mov esi, .errmsg3
+    mov edi, 0xB8000 + VGA_WIDTH * 2 * 3
+    call os_exception_handler_print_string
+
+    mov esi, .errmsg4
+    mov edi, 0xB8000 + VGA_WIDTH * 2 * 4
+    call os_exception_handler_print_string
+
+    mov esi, .errmsg5
+    mov edi, 0xB8000 + VGA_WIDTH * 2 * 5
+    call os_exception_handler_print_string
+
+    .waitfork:
+    call os_halt_for_key
+
+    
+
+    cmp al, "s"
+    je .shutdown
+
+    cmp al, "r"
+    je .restart
+
+    cmp al, "h"
+    je .halt
+
+    cmp al, "c"
+    je .continue
+    jne .waitfork
+
+.acknowledge_retry:
+
+    mov al,20h
+    out 20h,al  ;; acknowledge the interrupt to the PIC
+
+    jmp .waitfork
+
+.shutdown:  
+    ; Highlight option with blue
+    mov bl, 0x4B
+    mov esi, .errmsg3
+    mov edi, 0xB8000 + VGA_WIDTH * 2 * 3
+    call os_exception_handler_print_string
+
+    jmp os_shutdown
+.restart:
+    ; Highlight option with blue
+    mov bl, 0x4B
+    mov esi, .errmsg4
+    mov edi, 0xB8000 + VGA_WIDTH * 2 * 4
+    call os_exception_handler_print_string
+    
+    jmp os_restart
+.continue:
+    ; Highlight option with blue
+    mov bl, 0x4B
+    mov esi, .errmsg2
+    mov edi, 0xB8000 + VGA_WIDTH * 2 * 2
+    call os_exception_handler_print_string
+    
+    ret
+.halt:
+    ; Highlight option with blue
+    mov bl, 0x4B
+    mov esi, .errmsg5
+    mov edi, 0xB8000 + VGA_WIDTH * 2 * 5
+    call os_exception_handler_print_string
+    
+    jmp os_halt
+
+
+    .errmsg2 db "Press C to continue.",0
+    .errmsg3 db "Press S to shutdown.",0
+    .errmsg4 db "Press R to restart.",0
+    .errmsg5 db "Press H to halt forever.",0
 os_exception_handler_insert_eax:
     mov ecx, eax ; store eax for later use
 
@@ -80,14 +192,13 @@ os_exception_handler_insert_eax:
 
 
 os_exception_handler_print_string:
-    mov edi, 0xB8000
     .loopy:
         lodsb
         cmp al, 0
         je .done
         mov byte [edi], al
         inc edi
-        mov byte [edi], 0xF4
+        mov byte [edi], bl
         inc edi
         jmp .loopy
     .done:

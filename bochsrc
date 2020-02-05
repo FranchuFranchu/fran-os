@@ -1,0 +1,2 @@
+ata0-master:  type=disk, path=os.img, status=inserted
+boot: disk

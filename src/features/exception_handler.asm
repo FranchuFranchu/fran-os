@@ -1,5 +1,87 @@
 
 
+os_exception_fault:
+
+    mov bl, 0x4F
+    mov esi, .errmsg2
+    mov edi, 0xB8000 + VGA_WIDTH * 2 * 2
+    call os_exception_handler_print_string
+
+    mov esi, .errmsg3
+    mov edi, 0xB8000 + VGA_WIDTH * 2 * 3
+    call os_exception_handler_print_string
+
+    mov esi, .errmsg4
+    mov edi, 0xB8000 + VGA_WIDTH * 2 * 4
+    call os_exception_handler_print_string
+
+    mov esi, .errmsg5
+    mov edi, 0xB8000 + VGA_WIDTH * 2 * 5
+    call os_exception_handler_print_string
+
+    .waitfork:
+    call os_halt_for_key
+
+    
+
+    cmp al, "s"
+    je .shutdown
+
+    cmp al, "r"
+    je .restart
+
+    cmp al, "h"
+    je .halt
+
+    cmp al, "c"
+    je .continue
+    jne .waitfork
+
+.acknowledge_retry:
+
+    mov al,20h
+    out 20h,al  ;; acknowledge the interrupt to the PIC
+
+    jmp .waitfork
+
+.shutdown:  
+    ; Highlight option with blue
+    mov bl, 0x4B
+    mov esi, .errmsg3
+    mov edi, 0xB8000 + VGA_WIDTH * 2 * 3
+    call os_exception_handler_print_string
+
+    jmp os_shutdown
+.restart:
+    ; Highlight option with blue
+    mov bl, 0x4B
+    mov esi, .errmsg4
+    mov edi, 0xB8000 + VGA_WIDTH * 2 * 4
+    call os_exception_handler_print_string
+    
+    jmp os_restart
+.continue:
+    ; Highlight option with blue
+    mov bl, 0x4B
+    mov esi, .errmsg2
+    mov edi, 0xB8000 + VGA_WIDTH * 2 * 2
+    call os_exception_handler_print_string
+    
+    ret
+.halt:
+    ; Highlight option with blue
+    mov bl, 0x4B
+    mov esi, .errmsg5
+    mov edi, 0xB8000 + VGA_WIDTH * 2 * 5
+    call os_exception_handler_print_string
+    
+    jmp os_halt
+
+
+    .errmsg2 db "Press C to continue.",0
+    .errmsg3 db "Press S to shutdown.",0
+    .errmsg4 db "Press R to restart.",0
+    .errmsg5 db "Press H to halt forever.",0
 os_exception_handler_insert_eax:
     mov ecx, eax ; store eax for later use
 
@@ -29,14 +111,13 @@ os_exception_handler_insert_eax:
 
 
 os_exception_handler_print_string:
-    mov edi, 0xB8000
     .loopy:
         lodsb
         cmp al, 0
         je .done
         mov byte [edi], al
         inc edi
-        mov byte [edi], 0xF4
+        mov byte [edi], bl
         inc edi
         jmp .loopy
     .done:
@@ -132,10 +213,18 @@ os_exception_handler_define_int:
 
 
 os_exception_handler_00:
-    mov esi, .errmsg
-    call os_exception_handler_print_string
     
-    jmp os_halt
+    
+    call os_terminal_clear_screen
+
+    mov esi, .errmsg
+    mov edi, 0xB8000
+    mov bl, 0x4F
+    call os_exception_handler_print_string
+
+    call os_exception_fault
+    iret
+
 
     .errmsg db "Exception 0x00: Divide-by-zero Error",0
     .errmsgend:
@@ -143,10 +232,18 @@ os_exception_handler_00:
     db 0 ; Terminate string
 
 os_exception_handler_01:
-    mov esi, .errmsg
-    call os_exception_handler_print_string
     
-    jmp os_halt
+    
+    call os_terminal_clear_screen
+
+    mov esi, .errmsg
+    mov edi, 0xB8000
+    mov bl, 0x4F
+    call os_exception_handler_print_string
+
+    call os_exception_fault
+    iret
+
 
     .errmsg db "Exception 0x01: Debug",0
     .errmsgend:
@@ -154,10 +251,28 @@ os_exception_handler_01:
     db 0 ; Terminate string
 
 os_exception_handler_02:
-    mov esi, .errmsg
-    call os_exception_handler_print_string
     
+    
+    call os_terminal_clear_screen
+    mov bl, 0x4F
+
+    mov esi, .errmsg
+    mov edi, 0xB8000
+    call os_exception_handler_print_string
+
+    mov esi, .errmsg2
+    mov edi, 0xB8000 + VGA_WIDTH * 2 * 2
+    call os_exception_handler_print_string
+
+    mov esi, .errmsg3
+    mov edi, 0xB8000 + VGA_WIDTH * 2 * 3
+    call os_exception_handler_print_string
+
     jmp os_halt
+
+    .errmsg2 db "This error is fatal.",0
+    .errmsg3 db "Shutdown your computer manually.",0
+    
 
     .errmsg db "Exception 0x02: Non-maskable Interrupt",0
     .errmsgend:
@@ -165,10 +280,18 @@ os_exception_handler_02:
     db 0 ; Terminate string
 
 os_exception_handler_03:
-    mov esi, .errmsg
-    call os_exception_handler_print_string
     
-    jmp os_halt
+    
+    call os_terminal_clear_screen
+
+    mov esi, .errmsg
+    mov edi, 0xB8000
+    mov bl, 0x4F
+    call os_exception_handler_print_string
+
+    call os_exception_fault
+    iret
+
 
     .errmsg db "Exception 0x03: Breakpoint",0
     .errmsgend:
@@ -176,10 +299,18 @@ os_exception_handler_03:
     db 0 ; Terminate string
 
 os_exception_handler_04:
-    mov esi, .errmsg
-    call os_exception_handler_print_string
     
-    jmp os_halt
+    
+    call os_terminal_clear_screen
+
+    mov esi, .errmsg
+    mov edi, 0xB8000
+    mov bl, 0x4F
+    call os_exception_handler_print_string
+
+    call os_exception_fault
+    iret
+
 
     .errmsg db "Exception 0x04: Overflow",0
     .errmsgend:
@@ -187,10 +318,18 @@ os_exception_handler_04:
     db 0 ; Terminate string
 
 os_exception_handler_05:
-    mov esi, .errmsg
-    call os_exception_handler_print_string
     
-    jmp os_halt
+    
+    call os_terminal_clear_screen
+
+    mov esi, .errmsg
+    mov edi, 0xB8000
+    mov bl, 0x4F
+    call os_exception_handler_print_string
+
+    call os_exception_fault
+    iret
+
 
     .errmsg db "Exception 0x05: Bound Range Exceeded",0
     .errmsgend:
@@ -198,10 +337,18 @@ os_exception_handler_05:
     db 0 ; Terminate string
 
 os_exception_handler_06:
-    mov esi, .errmsg
-    call os_exception_handler_print_string
     
-    jmp os_halt
+    
+    call os_terminal_clear_screen
+
+    mov esi, .errmsg
+    mov edi, 0xB8000
+    mov bl, 0x4F
+    call os_exception_handler_print_string
+
+    call os_exception_fault
+    iret
+
 
     .errmsg db "Exception 0x06: Invalid Opcode",0
     .errmsgend:
@@ -209,10 +356,18 @@ os_exception_handler_06:
     db 0 ; Terminate string
 
 os_exception_handler_07:
-    mov esi, .errmsg
-    call os_exception_handler_print_string
     
-    jmp os_halt
+    
+    call os_terminal_clear_screen
+
+    mov esi, .errmsg
+    mov edi, 0xB8000
+    mov bl, 0x4F
+    call os_exception_handler_print_string
+
+    call os_exception_fault
+    iret
+
 
     .errmsg db "Exception 0x07: Device Not Available",0
     .errmsgend:
@@ -220,10 +375,28 @@ os_exception_handler_07:
     db 0 ; Terminate string
 
 os_exception_handler_08:
-    mov esi, .errmsg
-    call os_exception_handler_print_string
     
+    
+    call os_terminal_clear_screen
+    mov bl, 0x4F
+
+    mov esi, .errmsg
+    mov edi, 0xB8000
+    call os_exception_handler_print_string
+
+    mov esi, .errmsg2
+    mov edi, 0xB8000 + VGA_WIDTH * 2 * 2
+    call os_exception_handler_print_string
+
+    mov esi, .errmsg3
+    mov edi, 0xB8000 + VGA_WIDTH * 2 * 3
+    call os_exception_handler_print_string
+
     jmp os_halt
+
+    .errmsg2 db "This error is fatal.",0
+    .errmsg3 db "Shutdown your computer manually.",0
+    
 
     .errmsg db "Exception 0x08: Double Fault",0
     .errmsgend:
@@ -231,10 +404,18 @@ os_exception_handler_08:
     db 0 ; Terminate string
 
 os_exception_handler_09:
-    mov esi, .errmsg
-    call os_exception_handler_print_string
     
-    jmp os_halt
+    
+    call os_terminal_clear_screen
+
+    mov esi, .errmsg
+    mov edi, 0xB8000
+    mov bl, 0x4F
+    call os_exception_handler_print_string
+
+    call os_exception_fault
+    iret
+
 
     .errmsg db "Exception 0x09: Coprocessor Segment Overrun",0
     .errmsgend:
@@ -243,12 +424,18 @@ os_exception_handler_09:
 
 os_exception_handler_0a:
     pop eax
-    mov esi, .errmsg
-    mov ebx, .errmsgend
-    call os_exception_handler_insert_eax
-    call os_exception_handler_print_string
     
-    jmp os_halt
+    
+    call os_terminal_clear_screen
+
+    mov esi, .errmsg
+    mov edi, 0xB8000
+    mov bl, 0x4F
+    call os_exception_handler_print_string
+
+    call os_exception_fault
+    iret
+
 
     .errmsg db "Exception 0x0a: Invalid TSS",0
     .errmsgend:
@@ -257,12 +444,18 @@ os_exception_handler_0a:
 
 os_exception_handler_0b:
     pop eax
-    mov esi, .errmsg
-    mov ebx, .errmsgend
-    call os_exception_handler_insert_eax
-    call os_exception_handler_print_string
     
-    jmp os_halt
+    
+    call os_terminal_clear_screen
+
+    mov esi, .errmsg
+    mov edi, 0xB8000
+    mov bl, 0x4F
+    call os_exception_handler_print_string
+
+    call os_exception_fault
+    iret
+
 
     .errmsg db "Exception 0x0b: Segment Not Present",0
     .errmsgend:
@@ -271,12 +464,18 @@ os_exception_handler_0b:
 
 os_exception_handler_0c:
     pop eax
-    mov esi, .errmsg
-    mov ebx, .errmsgend
-    call os_exception_handler_insert_eax
-    call os_exception_handler_print_string
     
-    jmp os_halt
+    
+    call os_terminal_clear_screen
+
+    mov esi, .errmsg
+    mov edi, 0xB8000
+    mov bl, 0x4F
+    call os_exception_handler_print_string
+
+    call os_exception_fault
+    iret
+
 
     .errmsg db "Exception 0x0c: Stack-Segment Fault",0
     .errmsgend:
@@ -285,12 +484,18 @@ os_exception_handler_0c:
 
 os_exception_handler_0d:
     pop eax
-    mov esi, .errmsg
-    mov ebx, .errmsgend
-    call os_exception_handler_insert_eax
-    call os_exception_handler_print_string
     
-    jmp os_halt
+    
+    call os_terminal_clear_screen
+
+    mov esi, .errmsg
+    mov edi, 0xB8000
+    mov bl, 0x4F
+    call os_exception_handler_print_string
+
+    call os_exception_fault
+    iret
+
 
     .errmsg db "Exception 0x0d: General Protection Fault",0
     .errmsgend:
@@ -299,12 +504,18 @@ os_exception_handler_0d:
 
 os_exception_handler_0e:
     pop eax
-    mov esi, .errmsg
-    mov ebx, .errmsgend
-    call os_exception_handler_insert_eax
-    call os_exception_handler_print_string
     
-    jmp os_halt
+    
+    call os_terminal_clear_screen
+
+    mov esi, .errmsg
+    mov edi, 0xB8000
+    mov bl, 0x4F
+    call os_exception_handler_print_string
+
+    call os_exception_fault
+    iret
+
 
     .errmsg db "Exception 0x0e: Page Fault",0
     .errmsgend:
@@ -312,10 +523,18 @@ os_exception_handler_0e:
     db 0 ; Terminate string
 
 os_exception_handler_10:
-    mov esi, .errmsg
-    call os_exception_handler_print_string
     
-    jmp os_halt
+    
+    call os_terminal_clear_screen
+
+    mov esi, .errmsg
+    mov edi, 0xB8000
+    mov bl, 0x4F
+    call os_exception_handler_print_string
+
+    call os_exception_fault
+    iret
+
 
     .errmsg db "Exception 0x10: x87 Floating-Point Exception",0
     .errmsgend:
@@ -324,12 +543,18 @@ os_exception_handler_10:
 
 os_exception_handler_11:
     pop eax
-    mov esi, .errmsg
-    mov ebx, .errmsgend
-    call os_exception_handler_insert_eax
-    call os_exception_handler_print_string
     
-    jmp os_halt
+    
+    call os_terminal_clear_screen
+
+    mov esi, .errmsg
+    mov edi, 0xB8000
+    mov bl, 0x4F
+    call os_exception_handler_print_string
+
+    call os_exception_fault
+    iret
+
 
     .errmsg db "Exception 0x11: Alignment Check",0
     .errmsgend:
@@ -337,10 +562,28 @@ os_exception_handler_11:
     db 0 ; Terminate string
 
 os_exception_handler_12:
-    mov esi, .errmsg
-    call os_exception_handler_print_string
     
+    
+    call os_terminal_clear_screen
+    mov bl, 0x4F
+
+    mov esi, .errmsg
+    mov edi, 0xB8000
+    call os_exception_handler_print_string
+
+    mov esi, .errmsg2
+    mov edi, 0xB8000 + VGA_WIDTH * 2 * 2
+    call os_exception_handler_print_string
+
+    mov esi, .errmsg3
+    mov edi, 0xB8000 + VGA_WIDTH * 2 * 3
+    call os_exception_handler_print_string
+
     jmp os_halt
+
+    .errmsg2 db "This error is fatal.",0
+    .errmsg3 db "Shutdown your computer manually.",0
+    
 
     .errmsg db "Exception 0x12: Machine Check",0
     .errmsgend:
@@ -348,10 +591,18 @@ os_exception_handler_12:
     db 0 ; Terminate string
 
 os_exception_handler_13:
-    mov esi, .errmsg
-    call os_exception_handler_print_string
     
-    jmp os_halt
+    
+    call os_terminal_clear_screen
+
+    mov esi, .errmsg
+    mov edi, 0xB8000
+    mov bl, 0x4F
+    call os_exception_handler_print_string
+
+    call os_exception_fault
+    iret
+
 
     .errmsg db "Exception 0x13: SIMD Floating-Point Exception",0
     .errmsgend:
@@ -359,10 +610,18 @@ os_exception_handler_13:
     db 0 ; Terminate string
 
 os_exception_handler_14:
-    mov esi, .errmsg
-    call os_exception_handler_print_string
     
-    jmp os_halt
+    
+    call os_terminal_clear_screen
+
+    mov esi, .errmsg
+    mov edi, 0xB8000
+    mov bl, 0x4F
+    call os_exception_handler_print_string
+
+    call os_exception_fault
+    iret
+
 
     .errmsg db "Exception 0x14: Virtualization Exception",0
     .errmsgend:

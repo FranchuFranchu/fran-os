@@ -1,5 +1,6 @@
 BITS 32
 
+
 ; Allocate space for 0xFE event queue lists
 ; Last vector points to next vector table
 os_eventqueue_vectors:

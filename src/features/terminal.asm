@@ -46,6 +46,18 @@ os_vga_update_cursor:
     popa
     ret
 
+os_terminal_clear_screen:
+    mov ecx, VGA_WIDTH * VGA_HEIGHT * 2
+    
+.loopy:
+    mov byte [0xB8000 + ecx], 0x20
+    mov byte [0xB8000 + ecx + 1], 0x0
+    sub ecx, 2
+    cmp ecx, 0
+    jne .loopy
+
+.done:
+    ret
 ; IN = dl: y, dh: x
 ; OUT = edx: Index with offset 0xB8000 at VGA buffer
 ; Other registers preserved
