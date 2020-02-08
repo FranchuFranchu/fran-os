@@ -12,9 +12,15 @@ BITS 32
 %include "features/exception_handler.asm"
 %include "features/font.asm"
 %include "features/halt_for_key.asm"
+%include "features/ata_pio.asm"
 
 global kernel_main
 kernel_main:
+    call os_terminal_clear_screen
+
+    mov dh, VGA_COLOR_LIGHT_GREY
+    mov dl, VGA_COLOR_BLACK
+    call os_terminal_set_color
 
     call os_idt_setup
     call os_exception_handler_setup
@@ -24,14 +30,9 @@ kernel_main:
     call os_font_setup
     call os_terminal_setup
 
+    call os_ata_pio_setup
 
-    mov dh, VGA_COLOR_LIGHT_GREY
-    mov dl, VGA_COLOR_BLACK
-    call os_terminal_set_color
-    mov al, "A"
-    mov dh, 1
-    mov dl, 2
-    call os_terminal_putentryat
+
 
 
 

@@ -222,11 +222,11 @@ os_keyboard_keydown:
     jz .cleared_to_set
     jnz .set_to_cleared
 
-.cleared_to_set
+.cleared_to_set:
     mov dx, [os_togglekey_states]
     or dx, bx
     jmp .save
-.set_to_cleared
+.set_to_cleared:
     mov dx, [os_togglekey_states]
     not bx
     and dx, bx
