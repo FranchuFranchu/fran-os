@@ -10,7 +10,7 @@ os_ata_pio_setup:
 
     ret
 
-; IN = EDI: Disk buffer, ESI: LBA address (as an immediate value, not the location of the value)
+; IN = EDI: Disk buffer, ESI: LBA address (as an immediate value, not the location of the value), ECX: Amount of sectors to load
 ; OUT = Disk buffer filled. Carry set if driver is busy
 os_ata_pio_read:    
     pusha
@@ -29,13 +29,13 @@ os_ata_pio_read:
     out     dx, al
 
     mov     dx, ATA_PRIMARY_DATA + 2         ;Sector count port
-    mov     al, 1            ;Read one sector
+    mov     al, cl     
     out     dx, al
 
     call os_ata_pio_lba_to_sector
 
     mov     dx,ATA_PRIMARY_DATA + 3         ;Sector number port
-    mov     al, bl            ;Read sector one
+    mov     al, bl            
     out     dx, al
 
     call os_ata_pio_lba_to_cylinder
@@ -54,7 +54,6 @@ os_ata_pio_read:
     mov     al, 0x20          ; Read sectors
     out     dx, al
 
-    mov byte [wrote], 0xFF
 
     clc
     popa
@@ -85,6 +84,7 @@ os_ata_pio_lba_to_cylinder:
     mov ebx, eax
     mov eax, esi
 
+
     div ebx
 
     mov ebx, eax
@@ -108,6 +108,8 @@ os_ata_pio_lba_to_head:
     mov bl, [os_ata_pio_sectors_per_track]
     div ebx ; Quotient on eax
 
+    mov edx, 0 ; Clear more garbage
+    mov ebx, 0
     mov bl, [os_ata_pio_heads_per_cylinder]
     div ebx ; Remainder on edx
 
@@ -142,8 +144,7 @@ os_ata_pio_pointer_to_buffer dd 0
 
 os_ata_pio_irq_handler:
     pusha
-    cmp byte [wrote], 0
-    je .done
+
     mov ecx, 0x200 ; Must transfer 512 bytes
     mov edi, [os_ata_pio_pointer_to_buffer]
     mov dx, ATA_PRIMARY_DATA

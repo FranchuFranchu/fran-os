@@ -12,7 +12,8 @@ BITS 32
 %include "features/exception_handler.asm"
 %include "features/font.asm"
 %include "features/halt_for_key.asm"
-%include "features/ata_pio.asm"
+%include "features/storage/ata_pio.asm"
+%include "features/filesystem/ext2.asm"
 
 global kernel_main
 kernel_main:
@@ -31,6 +32,8 @@ kernel_main:
     call os_terminal_setup
 
     call os_ata_pio_setup
+
+    call os_fs_setup
 
 
 
