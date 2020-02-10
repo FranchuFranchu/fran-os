@@ -2,6 +2,8 @@
 [org 0x7c00]
  
 where_to_load equ 0x7e00
+jmp start
+db "Hi", 0
 start:
   cli    
   
@@ -12,8 +14,9 @@ start:
 
   mov ax, 0
   mov es, ax
+
   mov ah, 02h
-  mov al, 63
+  mov al, 10
   mov dl, dl
   mov ch, 0
   mov cl, 2
@@ -21,9 +24,8 @@ start:
   mov bx,where_to_load
 
   int 13h
-  mov ah, 0xE
-  mov al, "a"
-  int 10h
+
+
   mov si, .stri
   call print_string
 

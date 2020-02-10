@@ -2,6 +2,7 @@ bits 16
 [org 0x7e00]
 abs_start:
 jmp start
+db "Stage 2: Loaded", 0
 
 %include "modules/a20.asm"
 %include "modules/unrealmode.asm"
@@ -23,7 +24,7 @@ in_unreal:
     mov si, unreal_success
     call print_string
 .readsectors:
-    mov dl, [drive_number]
+    mov dl, 1
     mov ah, 0
     int 13h
   
@@ -36,9 +37,9 @@ in_unreal:
 
     mov ah, 02h
     mov al, [kernel_size]
-    mov dl, [drive_number]
+    mov dl, 0x81
     mov ch, 0
-    mov cl, 17 ;Sector 17 is LBA 16
+    mov cl, 1
     mov dh, 0
 
     int 13h
