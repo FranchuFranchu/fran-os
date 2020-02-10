@@ -1,8 +1,8 @@
 BITS 32
-[org 0x10000]
+[org 0x100000]
 jmp after_kernel_loaded
 
-db "Hello, world", 0
+db "Kernel: Loading confirmed", 0
 
 
  
@@ -126,7 +126,7 @@ gdt_end:
 gdt_desc:
    dw gdt_end - gdt - 1
    dd gdt
-   
+
 %include "kernel.asm"
 
 

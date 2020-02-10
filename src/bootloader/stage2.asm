@@ -1,5 +1,5 @@
 bits 16
-[org 0x7E00]
+[org 0x7e00]
 abs_start:
 jmp start
 
@@ -9,7 +9,6 @@ jmp start
 %include "modules/protectedmode.asm"
 BITS 16
 drive_number db 0
-
 kernel_size db 32 ; In sectors
 
 start:
@@ -78,5 +77,7 @@ print_string:     ; Routine: output string in SI to screen
 retry_count db 0
 
 ;times (($-abs_start) % 512 - 4) db 21
+
+where_to_load equ disk_buffer
 disk_buffer:
-times 64*512 db 0
+times 512*64 db 0

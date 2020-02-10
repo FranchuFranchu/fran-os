@@ -22,11 +22,12 @@ start_dumping:
 
 .loopy_dump:
     lodsb
+    %ifdef DUMP
     call os_string_convert_2hex
     call os_terminal_putchar
     shr eax, 8
     call os_terminal_putchar
-
+    %endif
     dec ecx
     cmp ecx, 0
     jne .loopy_dump

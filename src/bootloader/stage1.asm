@@ -1,6 +1,7 @@
 [bits 16]
 [org 0x7c00]
  
+where_to_load equ 0x7e00
 start:
   cli    
   
@@ -9,20 +10,24 @@ start:
   mov ss, ax
   mov sp, 4096
 
+  mov ax, 0
+  mov es, ax
   mov ah, 02h
   mov al, 63
   mov dl, dl
   mov ch, 0
   mov cl, 2
   mov dh, 0
-  mov bx, disk_buffer
+  mov bx,where_to_load
 
   int 13h
-
+  mov ah, 0xE
+  mov al, "a"
+  int 10h
   mov si, .stri
   call print_string
 
-  jmp disk_buffer
+  jmp where_to_load
 
   .stri db "MBR: Executed correctly.", 0xd, 0xa, 0 ; 0xd: CR, 0xA: LF
  
@@ -57,5 +62,3 @@ PT3 times 16 db 0             ; Third Partition Entry
 PT4 times 16 db 0             ; Fourth Partition Entry
  
 dw 0xAA55                     ; Boot Signature
-
-disk_buffer:

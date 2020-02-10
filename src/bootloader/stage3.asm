@@ -8,20 +8,19 @@ in_protected:
     ; but we want it at 0x100000
     mov ecx, 16384
     mov esi, disk_buffer
-    mov edi, 0x10000
+    mov edi, 0x100000
     rep movsd
 
 
-    mov eax, 14
+    mov eax, 15
     mov esi, .kernel_jumping
     call pm_print_string
 
-    mov eax, 15
-    mov esi, 0x10002
+    mov eax, 14
+    mov esi, 0x100002
     call pm_print_string
 
-
-    jmp 0x10000
+    jmp 0x100000
 
     .protected_msg db "Protected mode: Switched correctly", 0
     .kernel_jumping db "Jumping to kernel...", 0
