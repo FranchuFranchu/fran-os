@@ -105,6 +105,25 @@ os_terminal_putentryat:
     popa
     ret
 
+; Puts a 0x00 if the character at dx is a space. Used for cursor
+; IN = dx: Output of os_terminal_getidx
+; OUT = none
+os_terminal_put_none_if_space: 
+    pusha
+    mov ebx, edx
+
+    cmp byte [0xB8000 + ebx], 0x20
+    jne .notspace
+
+    mov dl, [os_terminal_color]    
+    mov byte [0xB8000 + ebx], 0x0
+    mov byte [0xB8001 + ebx], dl
+
+.notspace:
+    popa
+    ret
+
+
 ; IN = al: ASCII char
 os_terminal_putchar:
     pusha
@@ -140,6 +159,7 @@ os_terminal_putchar:
     mov [os_terminal_row], dl
 
     call os_terminal_getidx
+    call os_terminal_put_none_if_space
     call os_vga_update_cursor
 
     popa

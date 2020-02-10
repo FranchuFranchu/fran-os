@@ -36,7 +36,6 @@ after_kernel_loaded:
     ; C++ features such as global constructors and exceptions will require
     ; runtime support to work as well.
     
-    mov dword [0xB8000], ': ) '
     mov esp, stack_top
 
     cli
@@ -58,7 +57,6 @@ after_kernel_loaded:
 
       mov esp, stack_top
     
-    mov dword [0xB8000], ': ) '
     ; Enter the high-level kernel. The ABI requires the stack is 16-byte
     ; aligned at the time of the call instruction (which afterwards pushes
     ; the return pointer of size 4 bytes). The stack was originally 16-byte

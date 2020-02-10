@@ -13,17 +13,22 @@ os_ata_pio_setup:
 ; IN = EDI: Disk buffer, ESI: LBA address (as an immediate value, not the location of the value), ECX: Amount of sectors to load
 ; OUT = Disk buffer filled. Carry set if driver is busy
 os_ata_pio_read:    
+
     pusha
     cmp dword [os_ata_pio_pointer_to_buffer], 0 ; Driver busy?
     jne .busy
+    mov dword [os_ata_pio_pointer_to_buffer], edi
+
 
     mov     dx, ATA_PRIMARY_DATA + 7 ; Status port
     in      al, dx   ; Haven't found a use for this yet        
 
+
     mov     dx, ATA_PRIMARY_DATA + 6         ;Drive and head port
-    mov     al, 0xA0         ; Drive 0
+    mov     al, 0xB0 ; Drive 1
 
     call os_ata_pio_lba_to_head
+
     or      al, bl
 
     out     dx, al
@@ -35,18 +40,18 @@ os_ata_pio_read:
     call os_ata_pio_lba_to_sector
 
     mov     dx,ATA_PRIMARY_DATA + 3         ;Sector number port
-    mov     al, bl            
+    mov     al, 1;bl            
     out     dx, al
 
     call os_ata_pio_lba_to_cylinder
 
     mov     dx, ATA_PRIMARY_DATA + 4         ;Cylinder low port
-    mov     al, bl
+    mov     al, 0;bl
     out     dx, al
 
 
     mov     dx, ATA_PRIMARY_DATA + 5         ;Cylinder high port
-    mov     al, bh
+    mov     al, 0;bh
 
     out     dx, al
 
@@ -59,6 +64,7 @@ os_ata_pio_read:
     popa
     ret
 .busy:
+
     stc ; Set carry flag
     popa
     ret
@@ -82,6 +88,7 @@ os_ata_pio_lba_to_cylinder:
     mul ebx
 
     mov ebx, eax
+
     mov eax, esi
 
 
@@ -97,12 +104,14 @@ os_ata_pio_lba_to_cylinder:
 ; IN = ESI: LBA
 ; OUT = BL: Head
 os_ata_pio_lba_to_head:
+
     push eax
     push edx
 
     mov edx, 0 ; Clear garbage data so it doesnt interfere
     mov eax, 0
     mov ebx, 0
+
 
     mov eax, esi
     mov bl, [os_ata_pio_sectors_per_track]
@@ -118,6 +127,7 @@ os_ata_pio_lba_to_head:
     pop edx
     pop eax
     ret
+
 
 ; S = (LBA mod SPT) + 1
 ; IN = ESI: LBA
@@ -150,6 +160,21 @@ os_ata_pio_irq_handler:
     mov dx, ATA_PRIMARY_DATA
 .loopy:
     in ax, dx
+
+    push eax
+
+    call os_string_convert_4hex
+    call os_terminal_putchar
+    shr eax, 8
+    call os_terminal_putchar
+    shr eax, 8
+    call os_terminal_putchar
+    shr eax, 8
+    call os_terminal_putchar
+
+    pop eax
+
+
     mov [edi], ax
 
     add edi, 2
@@ -166,3 +191,41 @@ os_ata_pio_irq_handler:
     popa
     iret
 
+
+os_ata_pio_irq_handler_secondary:
+    pusha
+
+    mov ecx, 0x200 ; Must transfer 512 bytes
+    mov edi, [os_ata_pio_pointer_to_buffer]
+    mov dx, ATA_SECONDARY_DATA
+.loopy:
+    in ax, dx
+
+    push eax
+
+    call os_string_convert_4hex
+    call os_terminal_putchar
+    shr eax, 8
+    call os_terminal_putchar
+    shr eax, 8
+    call os_terminal_putchar
+    shr eax, 8
+    call os_terminal_putchar
+
+    pop eax
+
+    mov [edi], ax
+
+    add edi, 2
+    sub ecx, 2
+    cmp ecx, 0
+    jne .loopy
+
+.done:
+    mov dword [os_ata_pio_pointer_to_buffer], 0 ; Clear the buffer pointer to signal that the drive is not busy
+
+    mov al,20h
+    out 20h,al  ;; acknowledge the interrupt to the PIC
+
+    popa
+    iret

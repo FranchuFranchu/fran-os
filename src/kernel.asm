@@ -3,6 +3,8 @@ BITS 32
 %define MULTIBOOT_SIZE 16
 %define BASE_OF_SECTION 0;0x100000 + MULTIBOOT_SIZE
 
+%include "features/macros.inc"
+
 %include "features/terminal.asm"
 %include "features/keyboard.asm"
 %include "features/string.asm"
@@ -14,6 +16,7 @@ BITS 32
 %include "features/halt_for_key.asm"
 %include "features/storage/ata_pio.asm"
 %include "features/filesystem/ext2.asm"
+
 
 global kernel_main
 kernel_main:
@@ -33,8 +36,33 @@ kernel_main:
 
     call os_ata_pio_setup
 
-    call os_fs_setup
+    ;call os_fs_setup
 
+%ifdef EXAMPLE_DISK_DRIVER
+    mov edi, disk_buffer
+    mov ecx, 1
+    xor esi, esi
+
+    call os_ata_pio_read
+%endif
+
+
+
+    mov esi, disk_buffer
+    mov ecx, 512
+    jmp os_sleep
+.dump:
+    mov al, [esi]
+
+    call os_string_convert_2hex
+    call os_terminal_putchar
+    shr ax, 8
+    call os_terminal_putchar
+
+    inc esi
+    dec ecx
+    cmp ecx, 0
+    jne .dump
 
 
 
@@ -107,3 +135,6 @@ os_unhandled_interrupt:
 
     
 hello_string db "Hello, kernel World!", 0xA, 0 ; 0xA = line feed
+
+disk_buffer:
+times 512 db 0

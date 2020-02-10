@@ -1,2 +1,3 @@
-ata0-master:  type=disk, path=os.img
+ata0-master:  type=disk, path=disk_images/os_hda.img
+ata0-slave:  type=disk, path=disk_images/os_hdb.img
 boot: disk
