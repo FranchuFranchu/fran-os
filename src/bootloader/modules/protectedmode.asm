@@ -42,7 +42,7 @@ pm_start:
     or eax, 1
     mov cr0, eax
     jmp 8h:clear_pipe
-[BITS 32]
+    
 clear_pipe:
     mov ax, 10h
     mov ds, ax

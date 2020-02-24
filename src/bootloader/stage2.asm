@@ -1,16 +1,23 @@
-bits 16
+BITS 16
 [org 0x7e00]
+
+KERNEL_SIZE equ 0x1c
+
 abs_start:
 jmp start
 db "Stage 2: Loaded", 0
 
 %include "modules/a20.asm"
 %include "modules/unrealmode.asm"
-;%include "modules/fat.asm"
+%include "modules/ext2.asm"
+%include "modules/misc.asm"
 %include "modules/protectedmode.asm"
+
+BITS 32
+%include "stage3.asm"
+
 BITS 16
 drive_number db 0
-kernel_size db 32 ; In sectors
 
 start:
     mov [drive_number], dl
@@ -23,29 +30,75 @@ start:
 in_unreal:
     mov si, unreal_success
     call print_string
-.readsectors:
-    mov dl, 1
-    mov ah, 0
-    int 13h
-  
-    inc byte [retry_count]
+    call os_ext2_setup
 
-    mov ax, 0
-    mov es, ax
+
+    mov eax, 0
+    push eax
+    jmp .postadd
+.read_sectors:
+    pop eax
+    call os_print_eax
+    inc eax
+    push eax
+
+.postadd:
+    mov si, filename
     mov bx, disk_buffer
 
+    call os_ext2_load_file_inode
 
-    mov ah, 02h
-    mov al, [kernel_size]
-    mov dl, 0x81
-    mov ch, 0
-    mov cl, 1
-    mov dh, 0
+    pop eax
+    call os_print_eax
+    push eax
+    mov edi, 1
+    call os_ext2_load_inode_block
 
-    int 13h
+    jc .done
+    call os_print_eax
 
 
-    jc .readsectors
+    ; Copy to kernel_buffer
+    mov ecx, 0
+    mov cx, [BLOCK_SIZE]
+    mov esi, disk_buffer
+    mov edi, kernel_buffer
+    pop eax
+    push eax
+    push eax
+
+    mul ecx
+
+    add edi, eax
+    pop eax
+%define COPY 1
+%ifdef COPY
+.copy:
+    mov al, [esi]
+    mov [edi], al
+    dec ecx
+    inc esi
+    inc edi
+    cmp ecx, 0
+    jne .copy
+%endif
+    pop eax
+    push eax
+
+    cmp eax, KERNEL_SIZE
+    je .done
+    jmp .read_sectors
+
+.done:
+    pop eax
+
+
+    mov si, kernel_buffer+0
+    call print_string
+
+    mov si, kernel_success
+    call print_string
+
 
 load_kernel:
 
@@ -55,13 +108,8 @@ load_kernel:
 
     jmp pm_start
 
-%include "stage3.asm"
+filename db "kernel.bin", 0
 
-BITS 16
-
-bootloader_success db "Bootloader: Loaded correctly", 0xa, 0xd, 0
-unreal_success db "Unreal Mode: Switched correctly", 0xa, 0xd, 0
-kernel_success db "Kernel: Loaded correctly", 0xa, 0xd, 0
 
 print_string:     ; Routine: output string in SI to screen
   mov ah, 0Eh   ; int 10h 'print char' function
@@ -77,8 +125,24 @@ print_string:     ; Routine: output string in SI to screen
   ret
 retry_count db 0
 
+halt:
+  cli 
+.halt:
+  hlt
+  jmp .halt
+
 ;times (($-abs_start) % 512 - 4) db 21
 
 where_to_load equ disk_buffer
+
+bootloader_success db "Bootloader: Loaded correctly", 0xa, 0xd, 0
+unreal_success db "Unreal Mode: Switched correctly", 0xa, 0xd, 0
+kernel_success db "Kernel: Loaded correctly", 0xa, 0xd, 0
+
+superblock_buffer:
+times 1024 db 0
 disk_buffer:
-times 512*64 db 0
+times 512*8 db 0
+kernel_size dd 0 ; in bytes
+kernel_buffer: ; Stores the kernel until stage3.asm copies it
+times 200*1024 db 0
