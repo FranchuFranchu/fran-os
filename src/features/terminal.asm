@@ -48,13 +48,15 @@ os_vga_update_cursor:
 
 os_terminal_clear_screen:
     mov ecx, VGA_WIDTH * VGA_HEIGHT * 2
-    
+
+
 .loopy:
     mov byte [0xB8000 + ecx], 0x20
     mov byte [0xB8000 + ecx + 1], 0x0
-    sub ecx, 2
     cmp ecx, 0
-    jne .loopy
+    je .done
+    sub ecx, 2
+    jmp .loopy
 
 .done:
     ret

@@ -1,8 +1,6 @@
 BITS 16
 [org 0x7e00]
 
-KERNEL_SIZE equ 0x1c
-
 abs_start:
 jmp start
 db "Stage 2: Loaded", 0
@@ -17,7 +15,10 @@ BITS 32
 %include "stage3.asm"
 
 BITS 16
+
 drive_number db 0
+KERNEL_SIZE dd 0 ; In blocks
+
 
 start:
     mov [drive_number], dl
@@ -51,9 +52,9 @@ in_unreal:
     pop eax
     call os_print_eax
     push eax
+
     mov edi, 1
     call os_ext2_load_inode_block
-
     jc .done
     call os_print_eax
 
@@ -71,8 +72,7 @@ in_unreal:
 
     add edi, eax
     pop eax
-%define COPY 1
-%ifdef COPY
+
 .copy:
     mov al, [esi]
     mov [edi], al
@@ -81,17 +81,14 @@ in_unreal:
     inc edi
     cmp ecx, 0
     jne .copy
-%endif
-    pop eax
-    push eax
 
-    cmp eax, KERNEL_SIZE
-    je .done
+.done_copy:
     jmp .read_sectors
 
 .done:
     pop eax
 
+    mov [KERNEL_SIZE], eax
 
     mov si, kernel_buffer+0
     call print_string
@@ -134,7 +131,6 @@ halt:
 ;times (($-abs_start) % 512 - 4) db 21
 
 where_to_load equ disk_buffer
-
 bootloader_success db "Bootloader: Loaded correctly", 0xa, 0xd, 0
 unreal_success db "Unreal Mode: Switched correctly", 0xa, 0xd, 0
 kernel_success db "Kernel: Loaded correctly", 0xa, 0xd, 0

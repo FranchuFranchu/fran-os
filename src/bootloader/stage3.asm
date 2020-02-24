@@ -6,7 +6,11 @@ in_protected:
 
     ; stage2.asm loaded the kernel in disk_buffer
     ; but we want it at 0x100000
-    mov ecx, 16384
+    mov eax, 0
+    mov ax, [BLOCK_SIZE]
+    mul dword [KERNEL_SIZE]
+
+    mov ecx, eax
     mov esi, kernel_buffer
     mov edi, 0x100000
     rep movsd

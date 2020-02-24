@@ -489,7 +489,6 @@ os_ext2_get_file_block:
 
 .index_error:
     pop eax
-    pop eax
     stc
 .done:
     

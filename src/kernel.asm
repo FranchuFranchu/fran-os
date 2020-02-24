@@ -25,7 +25,7 @@ kernel_main:
     mov dh, VGA_COLOR_LIGHT_GREY
     mov dl, VGA_COLOR_BLACK
     call os_terminal_set_color
-
+    
     call os_idt_setup
     call os_exception_handler_setup
 
@@ -44,7 +44,6 @@ kernel_main:
     xor esi, esi
 
     call os_ata_pio_read
-%endif
 
 
 
@@ -63,6 +62,7 @@ kernel_main:
     dec ecx
     cmp ecx, 0
     jne .dump
+%endif
 
 
 
