@@ -24,34 +24,34 @@ os_ata_pio_read:
     in      al, dx   ; Haven't found a use for this yet        
 
 
-    mov     dx, ATA_PRIMARY_DATA + 6         ;Drive and head port
-    mov     al, 0xB0 ; Drive 1
+    mov     dx, ATA_PRIMARY_DATA + 6         ; Drive and head port
+    mov     al, 0xB0 ; Drive 2
 
     call os_ata_pio_lba_to_head
 
     or      al, bl
-
     out     dx, al
+    
 
-    mov     dx, ATA_PRIMARY_DATA + 2         ;Sector count port
-    mov     al, cl     
+    mov     dx, ATA_PRIMARY_DATA + 2         ; Sector count port
+    mov     al, 1    
     out     dx, al
 
     call os_ata_pio_lba_to_sector
 
     mov     dx,ATA_PRIMARY_DATA + 3         ;Sector number port
-    mov     al, 1;bl            
+    mov     al, bl            
     out     dx, al
 
     call os_ata_pio_lba_to_cylinder
 
-    mov     dx, ATA_PRIMARY_DATA + 4         ;Cylinder low port
-    mov     al, 0;bl
+    mov     dx, ATA_PRIMARY_DATA + 4         ; Cylinder low port
+    mov     al, bl
     out     dx, al
 
 
-    mov     dx, ATA_PRIMARY_DATA + 5         ;Cylinder high port
-    mov     al, 0;bh
+    mov     dx, ATA_PRIMARY_DATA + 5         ; Cylinder high port
+    mov     al, bh
 
     out     dx, al
 
@@ -161,18 +161,6 @@ os_ata_pio_irq_handler:
 .loopy:
     in ax, dx
 
-    push eax
-
-    call os_string_convert_4hex
-    call os_terminal_putchar
-    shr eax, 8
-    call os_terminal_putchar
-    shr eax, 8
-    call os_terminal_putchar
-    shr eax, 8
-    call os_terminal_putchar
-
-    pop eax
 
 
     mov [edi], ax

@@ -452,6 +452,7 @@ os_ext2_get_file_block:
     mov ah, 0eh
     mov al, "!"; TODO implement
     int 10h
+    jmp $
     jmp halt
 
 

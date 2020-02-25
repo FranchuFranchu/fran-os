@@ -5,18 +5,6 @@ BITS 32
 
 %include "features/macros.inc"
 
-%include "features/terminal.asm"
-%include "features/keyboard.asm"
-%include "features/string.asm"
-%include "features/gdt.asm"
-%include "features/idt.asm"
-%include "features/eventqueue.asm"
-%include "features/exception_handler.asm"
-%include "features/font.asm"
-%include "features/halt_for_key.asm"
-%include "features/storage/ata_pio.asm"
-%include "features/filesystem/ext2.asm"
-
 
 global kernel_main
 kernel_main:
@@ -25,7 +13,7 @@ kernel_main:
     mov dh, VGA_COLOR_LIGHT_GREY
     mov dl, VGA_COLOR_BLACK
     call os_terminal_set_color
-    
+
     call os_idt_setup
     call os_exception_handler_setup
 
@@ -33,36 +21,42 @@ kernel_main:
     call os_eventqueue_setup
     call os_font_setup
     call os_terminal_setup
-
     call os_ata_pio_setup
 
-    ;call os_fs_setup
+    mov eax, os_fs_setup
+    call os_print_eax
 
-%ifdef EXAMPLE_DISK_DRIVER
+    mov eax, os_ata_pio_setup
+    call os_print_eax
+
+    mov eax, [os_fs_setup]
+    call os_print_eax
+    jmp $
+    call os_fs_setup
+    ;jmp os_sleep
+
     mov edi, disk_buffer
     mov ecx, 1
-    xor esi, esi
+    mov esi ,2
 
     call os_ata_pio_read
 
-
-
     mov esi, disk_buffer
     mov ecx, 512
-    jmp os_sleep
 .dump:
     mov al, [esi]
 
+    push ecx
     call os_string_convert_2hex
     call os_terminal_putchar
     shr ax, 8
     call os_terminal_putchar
+    pop ecx
 
     inc esi
     dec ecx
     cmp ecx, 0
     jne .dump
-%endif
 
 
 
@@ -137,4 +131,17 @@ os_unhandled_interrupt:
 hello_string db "Hello, kernel World!", 0xA, 0 ; 0xA = line feed
 
 disk_buffer:
-times 512 db 0
+times 1024 db 0
+
+
+%include "features/terminal.asm"
+%include "features/keyboard.asm"
+%include "features/string.asm"
+%include "features/gdt.asm"
+%include "features/idt.asm"
+%include "features/eventqueue.asm"
+%include "features/exception_handler.asm"
+%include "features/font.asm"
+%include "features/halt_for_key.asm"
+%include "features/storage/ata_pio.asm"
+%include "features/filesystem/ext2.asm"

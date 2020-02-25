@@ -39,7 +39,6 @@ in_unreal:
     jmp .postadd
 .read_sectors:
     pop eax
-    call os_print_eax
     inc eax
     push eax
 
@@ -49,14 +48,9 @@ in_unreal:
 
     call os_ext2_load_file_inode
 
-    pop eax
-    call os_print_eax
-    push eax
-
     mov edi, 1
     call os_ext2_load_inode_block
     jc .done
-    call os_print_eax
 
 
     ; Copy to kernel_buffer
@@ -89,9 +83,6 @@ in_unreal:
     pop eax
 
     mov [KERNEL_SIZE], eax
-
-    mov si, kernel_buffer+0
-    call print_string
 
     mov si, kernel_success
     call print_string
