@@ -23,11 +23,11 @@ os_eventqueue_setup:
     rol ax, 8           ; al = high byte, ah = low byte
     out 0x40, al        ; Set high byte of reload value
     rol ax, 8           ; al = low byte, ah = high byte (ax = original reload value)
-    sti
 
     mov eax, os_pit_irq_handler
     mov ebx, 20h
     call os_define_interrupt
+    sti
     ret
 
 PIT_OSCILLATION_S  equ 11 ; pit oscillations in second

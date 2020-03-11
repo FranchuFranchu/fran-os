@@ -53,6 +53,7 @@ in_unreal:
     jc .done
 
 
+
     ; Copy to kernel_buffer
     mov ecx, 0
     mov cx, [BLOCK_SIZE]
@@ -73,11 +74,14 @@ in_unreal:
     dec ecx
     inc esi
     inc edi
+
     cmp ecx, 0
     jne .copy
 
+
 .done_copy:
     jmp .read_sectors
+
 
 .done:
     pop eax
@@ -92,7 +96,6 @@ load_kernel:
 
     mov si, kernel_success
     call print_string
-
 
     jmp pm_start
 

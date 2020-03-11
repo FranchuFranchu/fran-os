@@ -1,47 +1,42 @@
-#!/bin/bash
 
-if test "`whoami`" != "root" ; then
-    echo "You must be logged in as root to build (for loopback mounting)"
-    echo "Enter 'sudo bash' or 'sudo ./build.sh' to switch to root"
-    exit
+echo "" > log.log
+cd src
+nasm -felf32 boot.asm -o boot.o
+if nasm -felf32 kernel.asm -o kernel.o; then
+    echo "Built kernel"
+else
+    echo "Abort."
+    exit 1
 fi
 
-cd src/bootloader
+PATH=$PATH:/usr/local/cross/bin
 
-nasm stage1.asm -o stage1.bin || exit
-nasm stage2.asm -o stage2.bin || exit
+#i686-elf-gcc -c kernel.c -o kernel.o -std=gnu99 -ffreestanding -O2 -Wall -Wextra
+i686-elf-gcc -T ../linker.ld -o ../disk-images/os_hda.img -ffreestanding -O2 -nostdlib boot.o kernel.o -lgcc
 cd ..
 
-nasm boot.asm   -o kernel.bin || exit
-
-cd ..
-
-
-# Copy stuff
-cp src/kernel.bin guest-filesystem/kernel.bin
-
-
-dd status=noxfer conv=notrunc if=src/bootloader/stage1.bin of=disk_images/os_hda.img || exit
-dd status=noxfer conv=notrunc if=src/bootloader/stage2.bin seek=1 of=disk_images/os_hda.img || exit
-
-# Make filesystem disk
-dd status=noxfer conv=notrunc if=/dev/zero of=disk_images/os_hdb.img count=256
-mkfs.ext2 disk_images/os_hdb.img
-
+rm disk-images/os_hdb.img
+dd status=noxfer conv=notrunc if=/dev/zero of=disk-images/os_hdb.img bs=32256 count=16
+mkfs.ext2 disk-images/os_hdb.img
 # Mount it 
 rm -rf tmp-loop
 mkdir tmp-loop
-mount -o loop disk_images/os_hdb.img tmp-loop
+mount -o loop disk-images/os_hdb.img tmp-loop
 
 cp -r guest-filesystem/* tmp-loop
 
 umount tmp-loop || exit
 
 
+if grub-file --is-x86-multiboot disk-images/os_hda.img; then
+  echo multiboot confirmed
 
-#qemu-img dd if=disk_images/os.img of=disk_images/os.img 
-
-#parted -a none disk_images/os.img mkpart primary 33280B 130048B
-
-qemu-system-i386 -monitor stdio -drive file=disk_images/os_hda.img,format=raw,index=0,media=disk -drive file=disk_images/os_hdb.img,format=raw,index=1,media=disk -d int,guest_errors -D log.log
-#bochs -f bochsrc
+    mkdir -p isodir/boot/grub
+    cp disk-images/os_hda.img isodir/boot/os.bin
+    grub-mkrescue -o disk-images/os_hda.img isodir
+    qemu-system-i386 -monitor stdio -drive file=disk-images/os_hda.img,format=raw,index=0,media=disk -drive file=disk-images/os_hdb.img,format=raw,index=1,media=disk -d int,guest_errors -D log.log
+    
+    #bochs -f bochsrc
+else
+  echo the file is not multiboot
+fi

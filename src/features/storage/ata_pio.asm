@@ -3,6 +3,7 @@ ATA_SECONDARY_DATA equ 0x170
 ATA_PRIMARY_CONTROL equ 0x3F6
 ATA_SECONDARY_CONTROL equ 0x376
 
+
 os_ata_pio_setup:
     mov eax, os_ata_pio_irq_handler
     mov ebx, 2eh
@@ -15,6 +16,7 @@ os_ata_pio_setup:
 os_ata_pio_read:    
 
     pusha
+
     cmp dword [os_ata_pio_pointer_to_buffer], 0 ; Driver busy?
     jne .busy
     mov dword [os_ata_pio_pointer_to_buffer], edi
@@ -69,8 +71,39 @@ os_ata_pio_read:
     popa
     ret
 
-os_ata_pio_heads_per_cylinder db 16
-os_ata_pio_sectors_per_track db 63
+
+os_ata_pio_pointer_to_buffer dd 0
+
+os_ata_pio_irq_handler:
+    pusha
+
+    mov ecx, 0x200 ; Must transfer 512 bytes
+    mov edi, [os_ata_pio_pointer_to_buffer]
+    mov dx, ATA_PRIMARY_DATA
+.loopy:
+    in ax, dx
+
+    mov [edi], ax
+
+
+    add edi, 2
+    sub ecx, 2
+    cmp ecx, 0
+    jne .loopy
+
+.done:
+
+    mov dword [os_ata_pio_pointer_to_buffer], 0 ; Clear the buffer pointer to signal that the drive is not busy
+
+    mov al,20h
+    out 0xA0,al  ; acknowledge the interrupt to both pics
+    out 0x20,al  ;
+
+    popa
+    iret
+
+os_ata_pio_heads_per_cylinder dd 16
+os_ata_pio_sectors_per_track dd 63
 
 ; C = LBA ÷ (HPC × SPT)
 ; IN = ESI: LBA
@@ -109,17 +142,14 @@ os_ata_pio_lba_to_head:
     push edx
 
     mov edx, 0 ; Clear garbage data so it doesnt interfere
-    mov eax, 0
-    mov ebx, 0
 
 
     mov eax, esi
-    mov bl, [os_ata_pio_sectors_per_track]
+    mov ebx, [os_ata_pio_sectors_per_track]
     div ebx ; Quotient on eax
 
     mov edx, 0 ; Clear more garbage
-    mov ebx, 0
-    mov bl, [os_ata_pio_heads_per_cylinder]
+    mov ebx, [os_ata_pio_heads_per_cylinder]
     div ebx ; Remainder on edx
 
     mov ebx, edx
@@ -143,77 +173,12 @@ os_ata_pio_lba_to_sector:
     mov ebx, [os_ata_pio_sectors_per_track]
     div ebx ; Remainder on edx
 
+    mov ebx, 0
+
     mov bl, dl
     inc bl
+
 
     pop edx
     pop eax
     ret
-
-os_ata_pio_pointer_to_buffer dd 0
-
-os_ata_pio_irq_handler:
-    pusha
-
-    mov ecx, 0x200 ; Must transfer 512 bytes
-    mov edi, [os_ata_pio_pointer_to_buffer]
-    mov dx, ATA_PRIMARY_DATA
-.loopy:
-    in ax, dx
-
-
-
-    mov [edi], ax
-
-    add edi, 2
-    sub ecx, 2
-    cmp ecx, 0
-    jne .loopy
-
-.done:
-    mov dword [os_ata_pio_pointer_to_buffer], 0 ; Clear the buffer pointer to signal that the drive is not busy
-
-    mov al,20h
-    out 20h,al  ;; acknowledge the interrupt to the PIC
-
-    popa
-    iret
-
-
-os_ata_pio_irq_handler_secondary:
-    pusha
-
-    mov ecx, 0x200 ; Must transfer 512 bytes
-    mov edi, [os_ata_pio_pointer_to_buffer]
-    mov dx, ATA_SECONDARY_DATA
-.loopy:
-    in ax, dx
-
-    push eax
-
-    call os_string_convert_4hex
-    call os_terminal_putchar
-    shr eax, 8
-    call os_terminal_putchar
-    shr eax, 8
-    call os_terminal_putchar
-    shr eax, 8
-    call os_terminal_putchar
-
-    pop eax
-
-    mov [edi], ax
-
-    add edi, 2
-    sub ecx, 2
-    cmp ecx, 0
-    jne .loopy
-
-.done:
-    mov dword [os_ata_pio_pointer_to_buffer], 0 ; Clear the buffer pointer to signal that the drive is not busy
-
-    mov al,20h
-    out 20h,al  ;; acknowledge the interrupt to the PIC
-
-    popa
-    iret

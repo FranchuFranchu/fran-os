@@ -188,6 +188,8 @@ os_keyboard_keydown:
     .lowercase:
 
     call os_terminal_putchar
+
+
     jmp .done
 
 .controlkey:

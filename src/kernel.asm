@@ -3,8 +3,19 @@ BITS 32
 %define MULTIBOOT_SIZE 16
 %define BASE_OF_SECTION 0;0x100000 + MULTIBOOT_SIZE
 
-%include "features/macros.inc"
-
+%include "features/cpuid.asm"
+%include "features/debugging.asm"
+%include "features/eventqueue.asm"
+%include "features/exception_handler.asm"
+%include "features/filesystem/ext2.asm"
+%include "features/font.asm"
+%include "features/gdt.asm"
+%include "features/halt_for_key.asm"
+%include "features/idt.asm"
+%include "features/keyboard.asm"
+%include "features/storage/ata_pio.asm"
+%include "features/string.asm"
+%include "features/terminal.asm"
 
 global kernel_main
 kernel_main:
@@ -13,6 +24,7 @@ kernel_main:
     mov dh, VGA_COLOR_LIGHT_GREY
     mov dl, VGA_COLOR_BLACK
     call os_terminal_set_color
+    call os_terminal_setup
 
     call os_idt_setup
     call os_exception_handler_setup
@@ -20,46 +32,29 @@ kernel_main:
     call os_keyboard_setup
     call os_eventqueue_setup
     call os_font_setup
-    call os_terminal_setup
     call os_ata_pio_setup
-
-    mov eax, os_fs_setup
-    call os_print_eax
-
-    mov eax, os_ata_pio_setup
-    call os_print_eax
-
-    mov eax, [os_fs_setup]
-    call os_print_eax
-    jmp $
     call os_fs_setup
-    ;jmp os_sleep
 
-    mov edi, disk_buffer
-    mov ecx, 1
-    mov esi ,2
-
-    call os_ata_pio_read
+    %define sample_file_loading
+    %ifdef sample_file_loading 
+    mov esi, .filename
+    call os_fs_get_subfile_inode
+    call os_fs_load_inode
+    mov eax, 0
+    mov edi, 0
+    call os_fs_load_inode_block
 
     mov esi, disk_buffer
-    mov ecx, 512
-.dump:
-    mov al, [esi]
-
-    push ecx
-    call os_string_convert_2hex
-    call os_terminal_putchar
-    shr ax, 8
-    call os_terminal_putchar
-    pop ecx
-
-    inc esi
-    dec ecx
-    cmp ecx, 0
-    jne .dump
+    call os_terminal_write_string
+    %endif
 
 
 
+    jmp os_sleep
+
+    
+.filename db "potato.txt"
+    
 
 os_sleep:
     sti
@@ -67,6 +62,7 @@ os_sleep:
     hlt
     jmp .sleep
 
+cpuid_not_supported:
 os_halt:
     cli
 .halt:
@@ -126,22 +122,7 @@ os_unhandled_interrupt:
     pop eax     ; restore state
     iret
 
-
+disk_buffer:
+    times 2048   db 0
     
 hello_string db "Hello, kernel World!", 0xA, 0 ; 0xA = line feed
-
-disk_buffer:
-times 1024 db 0
-
-
-%include "features/terminal.asm"
-%include "features/keyboard.asm"
-%include "features/string.asm"
-%include "features/gdt.asm"
-%include "features/idt.asm"
-%include "features/eventqueue.asm"
-%include "features/exception_handler.asm"
-%include "features/font.asm"
-%include "features/halt_for_key.asm"
-%include "features/storage/ata_pio.asm"
-%include "features/filesystem/ext2.asm"

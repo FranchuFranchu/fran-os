@@ -123,11 +123,7 @@ os_print_eax:
     
     shr ebx, 8
 
-    mov al, 0xA
-    mov ah, 0eh
-    int 10h
-    mov al, 0xD 
-    mov ah, 0eh
+    mov ax, 0x0E20
     int 10h
 
     pop ebx

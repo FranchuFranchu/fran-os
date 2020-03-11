@@ -127,7 +127,7 @@ os_exception_handler_setup:
     call os_exception_handler_define_int
     ret
 os_exception_handler_define_int:
-
+    
     mov eax, os_exception_handler_00
     mov ebx, 00h
     call os_define_interrupt

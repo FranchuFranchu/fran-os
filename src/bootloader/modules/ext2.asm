@@ -14,21 +14,27 @@
     
     print_ch "a"
     mov eax, eax
+    call os_print_eax
 
     print_ch "b"
     mov eax, ebx
+    call os_print_eax
 
     print_ch "c"
     mov eax, ecx
+    call os_print_eax
 
     print_ch "d"
     mov eax, edx
+    call os_print_eax
 
     print_ch "e"
     mov eax, esi
+    call os_print_eax
 
     print_ch "f"
     mov eax, edi
+    call os_print_eax
 
 
     popa
@@ -60,8 +66,11 @@ read_sectors:
     mov al, cl
     call os_lba_to_int13h
     int 13h
-    
-  
+
+    push eax
+    xor eax, eax ; it just works
+    ; only god knows why
+    pop eax
 
 
     jnc .done
@@ -467,22 +476,27 @@ os_ext2_get_file_block:
     push edx
 
     mov eax, [bx + 88] ; Singly indirect block
-    mov edi, 0
-    add eax, 1
+    mov ecx, 10
+    add eax, 8
+    call os_print_eax  
     ;mov eax, 0x17800 / 1024+1
+    mov bx, disk_buffer
     call os_ext2_load_block
     mov bx, disk_buffer
-
     mov eax, [bx]
+    call os_print_eax   
+
 
     pop edx
+    
 
     sub edx, 12
-    shl edx, 2
+    shl edx, 2  
 
     add bx, dx
 
     mov eax, [bx]
+    call os_print_eax   
 
     jmp .done
 
@@ -628,7 +642,17 @@ os_ext2_load_inode_block:
     jc .fail
     mov bx, disk_buffer
     pop edi
+    call os_print_eax
     call os_ext2_load_block
+    mov eax, [disk_buffer]
+    call os_print_eax
+
+    push ax
+    mov ax, 0x0e0d
+    int 10h
+    mov ax, 0x0e0a
+    int 010h
+    pop ax
 
     jmp .ok
 .fail:

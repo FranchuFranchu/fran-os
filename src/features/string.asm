@@ -65,35 +65,3 @@ os_string_convert_4hex:
     pop edx
     ret
 
-
-os_print_eax:
-    push eax
-    push ebx
-    push eax
-    ror eax, 16
-    call os_string_convert_4hex
-    call os_terminal_putchar
-    shr eax, 8
-    call os_terminal_putchar
-    shr eax, 8
-    call os_terminal_putchar
-    shr eax, 8
-    call os_terminal_putchar
-    shr eax, 8
-
-
-    pop eax
-    call os_string_convert_4hex
-    call os_terminal_putchar
-    shr eax, 8
-    call os_terminal_putchar
-    shr eax, 8
-    call os_terminal_putchar
-    shr eax, 8
-    call os_terminal_putchar
-    shr eax, 8
-    pop ebx
-    mov al, 0xa
-    call os_terminal_putchar
-    pop eax
-    ret

@@ -1,5 +1,9 @@
 
 enable_a20:
+    in al, 0x92
+    or al, 2
+    out 0x92, al
+
     mov     ax,2403h                ;--- A20-Gate Support ---
     int     15h
     jb      a20_ns                  ;INT 15h is not supported

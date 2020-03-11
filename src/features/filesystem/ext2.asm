@@ -1,5 +1,4 @@
-os_fs_test dd 0xdeadbeef
-
+BITS 32
 fs_offset dw 1
 fs_start dw 0 ; In sectors
 
@@ -16,15 +15,35 @@ BLOCK_SIZE dw 0
 BLOCK_SECTORS db 0
 GROUP_COUNT dd 0
 
-; IN = EAX: LBA, CL: Sector count, ES:BX Buffer pointer
+; IN = EAX: LBA, CL: Sector count, EBX: Buffer pointer
 read_sectors:
     pusha
-    and ebx, 0x0000FFFF
     mov edi, ebx
     and ecx, 0xFF
     mov esi, eax
 
+
+
+.loopy:
+    mov eax, ecx
+    mov ecx, 1
     call os_ata_pio_read
+    mov ecx, eax
+    jc os_exception_fault
+
+.busy:
+    cmp dword [os_ata_pio_pointer_to_buffer], 0 ; Driver busy?
+    jne .busy
+
+
+    add edi, 512
+    inc esi
+    dec ecx
+    cmp ecx, 0
+    jne .loopy
+
+
+    ; Poll until ready
 
     popa
     ret
@@ -32,35 +51,37 @@ read_sectors:
 os_fs_setup:
     pusha
     
-    mov ax, 0
-    mov es, ax
-    mov dx, 0
+    mov eax, 1
+    mov edx, 0
 
 
 .retry:
-    ; Superblock is in LBA 1 if we don't have a MBR. 
-    ; It can be LBA 2 if we do though, 
-    ; or in any other if the disk is partition. 
-    ; We will test for 1, 2, and 3
+    ; Superblock is in LBA 2 if we don't have a MBR. 
+    ; It can be LBA 3 if we do though, 
+    ; or in any other if the disk is partitioned. 
+    ; We will test for 2, 3, and 4 
 
-    cmp dx, 3
+    cmp edx, 4
     je .error_wrongfs
 
 
-    inc ax
-    inc dx
+    
+
 
     mov cl, 2 ; Its size is 1024B
-    mov bx, superblock_buffer
+    mov ebx, superblock_buffer
+
     call read_sectors
 
+    inc eax
+    inc edx
+
     cmp word EXT2_SIGNATURE, 0xef53 ; check for ext2 signature
-    
-    
     jne .retry
 
 .found_superblock:
     mov [fs_offset], ax
+
 
     ; Calculate block size
     ; BLOCK_SIZE = log2 (BLOCK_SIZE_LOG) - 10. (In other words, the number to shift 1,024 to the left by to obtain the block size) 
@@ -75,6 +96,7 @@ os_fs_setup:
     mov [BLOCK_SIZE], ax
 
     mov edx, 0
+    mov ecx, 0
     mov cx, SECTOR_SIZE
     div cx
     mov byte [BLOCK_SECTORS], al
@@ -83,10 +105,12 @@ os_fs_setup:
     ; GROUP_COUNT = ceil(INODE_COUNT / INODES_PER_GROUP)
     ; It's a good idea to check both and compare them
 
-    mov edx, 0 
+    
+
     mov eax, BLOCK_COUNT
     mov ebx, BLOCKS_PER_GROUP
-    div ebx
+    mov edx, 0 
+    div ebx 
 
     ; Round up
     cmp edx, 0
@@ -111,20 +135,19 @@ os_fs_setup:
     inc eax
 
     .zero2:
-
     cmp ecx, eax ; Make sure they are equal
 
     jne .error_unmatching_groupcount
 
     mov eax, SUPERBLOCK_BLOCK
     add eax, [fs_offset]
-    mov word [fs_start], 1;eax
+    mov word [fs_start], 1
 
 
     ; Now that the superblock is loaded,
 
     
-    mov si, .yessuperblock_msg
+    mov esi, .yessuperblock_msg
     call os_terminal_write_string
 
 
@@ -134,20 +157,20 @@ os_fs_setup:
 
 
 .error_wrongfs:
-    mov si, .nosuperblock_msg
+    mov esi, .nosuperblock_msg
     call os_terminal_write_string
 
     jmp os_halt
 .error_unmatching_groupcount:
-    mov si, .unmatching_groupcount_msg
+    mov esi, .unmatching_groupcount_msg
     call os_terminal_write_string
 
     jmp os_halt
 
-.nosuperblock_msg db "Error: Ext2 Superblock not found. Make sure you have an unpartitioned ext2 hard disk mounted in hdb.", 0xd, 0xa, 0
-.yessuperblock_msg db "Ext2: Superblock loaded", 0xd, 0xa, 0
-.rootdir_success_msg db "Ext2: Root directory loaded", 0xd, 0xa, 0
-.unmatching_groupcount_msg db "Error: BLOCK_COUNT / BLOCKS_PER_GROUP != INODE_COUNT / INODES_PER_GROUP", 0xd, 0xa, 0
+.nosuperblock_msg db "Error: Ext2 Superblock not found. Make sure you have an unpartitioned ext2 hard disk mounted in hdb.",  0xa, 0
+.yessuperblock_msg db "Ext2: Superblock loaded", 0xa, 0
+.rootdir_success_msg db "Ext2: Root directory loaded", 0xa, 0
+.unmatching_groupcount_msg db "Error: BLOCK_COUNT / BLOCKS_PER_GROUP != INODE_COUNT / INODES_PER_GROUP", 0xa, 0
 
 ; IN =  EAX: Inode number
 ; OUT = EAX: Group number
@@ -156,7 +179,7 @@ os_fs_get_inode_group:
     push ebx
 
     ;  block group = (inode – 1) / INODES_PER_GROUP
-    mov edx,0 ; Clear garbage
+    mov edx, 0 ; Clear garbage
     mov dword ebx, INODES_PER_GROUP ; Inodes per block group
     sub eax, 1
     div ebx 
@@ -171,9 +194,10 @@ os_fs_get_inode_index:
     push edx
     push ebx
 
-    mov edx, 0 ; Clean garbage
 
     ; index = (inode – 1) % INODES_PER_GROUP
+    mov edx, 0 ; Clean garbage
+
     mov dword ebx, INODES_PER_GROUP ; Inodes per block group
     sub eax, 1
     div ebx
@@ -199,7 +223,7 @@ os_fs_get_inode_block:
 
     mov edx, 0 ; Clear garbage
     mov ebx, 0
-    mov word bx, BLOCK_SIZE
+    mov word bx, [BLOCK_SIZE]
     div ebx
 
     mov eax, ebx
@@ -234,8 +258,8 @@ os_fs_get_block_lba:
     ret
 
 
-; IN =  EAX: Block group number, ES:BX: Buffer
-; OUT = ES:BX contents and value changed to point to the start of the entry
+; IN =  EAX: Block group number, EBX: Buffer
+; OUT = EBX contents and value changed to point to the start of the entry
 os_fs_read_bgdt:
     ; Push everything except BX
     push eax
@@ -291,7 +315,7 @@ os_fs_read_bgdt:
     pop eax
     ret
 
-; IN =  EAX: Group number, ES:BX: Buffer
+; IN =  EAX: Group number, EBX: Buffer
 ; OUT = EAX: Block address of start of inode table
 os_fs_get_inode_table_block:
     push ebx
@@ -300,8 +324,8 @@ os_fs_get_inode_table_block:
     pop ebx
     ret
     
-; IN =  EAX: Inode number, ES:BX: Buffer
-; OUT = ES:BX points to the inode
+; IN =  EAX: Inode number, EBX: Buffer
+; OUT = EBX points to the inode
 os_fs_load_inode:
     push eax
     push ecx
@@ -310,7 +334,6 @@ os_fs_load_inode:
 
     push eax ; Inode number
     call os_fs_get_inode_index
- 
 
     mov ecx, INODE_SIZE
     mul ecx
@@ -333,22 +356,27 @@ os_fs_load_inode:
 
 
     call os_fs_get_inode_group
-
-
     call os_fs_get_inode_table_block
+
     add eax, ecx
 
 
-    mov bx, disk_buffer
+    
+    mov ebx, disk_buffer
     mov edi, 0
-    clc
     call os_fs_load_block
+    mov ebx, disk_buffer
 
 
 
     pop edx ; Byte offset
 
+    mov eax, edx
+    mov eax, disk_buffer
+
     add ebx, edx
+
+    mov eax, ebx
 
 
     pop edi
@@ -358,7 +386,7 @@ os_fs_load_inode:
     ret
 
 ; Gets the location for the EAXth block that contains a file
-; IN =  EAX: Block index, ES:BX: Buffer with the inode
+; IN =  EAX: Block index, EBX: Buffer with the inode
 ; OUT = EAX: Block number
 os_fs_get_file_block:
     push ebx
@@ -368,15 +396,14 @@ os_fs_get_file_block:
 
     push eax
     ;inc eax ; To round up to closest multiple of [BLOCK_SIZE]
-
     mov ecx, 0
     mov edx, 0
     mov cx, [BLOCK_SIZE]
 
     mul ecx
-    cmp [bx+108], edx 
+    cmp [ebx+108], edx 
     jl .index_error; Requested block is larger than file
-    cmp [bx+4], eax 
+    cmp [ebx+4], eax 
     jng .index_error; Requested block is larger than file
 
     pop eax
@@ -400,6 +427,7 @@ os_fs_get_file_block:
 .direct_inode:
     shl eax, 1 ; multiply by two
 
+
     add ebx, eax
     mov eax, [ebx+40+eax]
 
@@ -407,23 +435,23 @@ os_fs_get_file_block:
 .indirect1_inode:
     push edx
 
-    mov eax, [bx + 88] ; Singly indirect block
+    mov eax, [ebx + 88] ; Singly indirect block
     mov edi, 0
     add eax, 1
     ;mov eax, 0x17800 / 1024+1
     call os_fs_load_block
-    mov bx, disk_buffer
+    mov ebx, disk_buffer
 
-    mov eax, [bx]
+    mov eax, [ebx]
 
     pop edx
 
     sub edx, 12
     shl edx, 2
 
-    add bx, dx
+    add ebx, edx
 
-    mov eax, [bx]
+    mov eax, [ebx]
 
     jmp .done
 
@@ -443,11 +471,16 @@ os_fs_get_file_block:
 ; IN =  EAX: Block number
 ; OUT = disk_buffer filled with block
 os_fs_load_block:
-    
+        
+    pusha
+
     call os_fs_get_block_lba
-    mov bx, disk_buffer 
+    mov ebx, disk_buffer 
+    mov ecx, 0
     mov cl, [BLOCK_SECTORS]
     call read_sectors
+
+    popa
     ret
 
 ; IN = EAX:  Parent directory inode number, ESI: Filename
@@ -460,33 +493,34 @@ os_fs_get_subfile_inode:
     push edi
 
 
-    mov bx, disk_buffer
+    mov eax, 2
+    mov ebx, disk_buffer
     call os_fs_load_inode
-    mov ecx, [bx+4] ; File size
+    mov ecx, [ebx+4] ; File size
     mov eax, 0 ; Get data block index number 0 
 
 .load_blocks:
     call os_fs_get_file_block
     mov edi, 0
     call os_fs_load_block
+    mov ebx, disk_buffer
+
+
 
     mov ecx, 0x100
     push eax
-    add bx, 0xc
+    add ebx, 0xc
     .look_for_filename:
         push ecx ; look_for_filename counter
 
-        mov ax, bx
+        mov eax, ebx
 
-        mov di, bx
-        add di, 8
+        mov edi, ebx
+        add edi, 8
 
         mov ecx, 0
-        mov cl, [bx+6] ; Name length
-        mov eax, 0
-        mov al, cl
+        mov cl, [ebx+6] ; Name length
 
-        mov ah, 0eh
         push esi
         push ecx
 
@@ -505,8 +539,8 @@ os_fs_get_subfile_inode:
         pop ecx
         pop esi
         pop ecx ; look_for_filename counter
-        mov di, bx
-        add di, 8
+        mov edi, ebx
+        add edi, 8
         jmp .found_name
 
         .notequal:
@@ -515,8 +549,9 @@ os_fs_get_subfile_inode:
         pop ecx
         pop esi
 
-        mov ax, [bx+4]
-        add bx, ax
+        mov eax, 0
+        mov ax, [ebx+4]
+        add ebx, eax
 
         pop ecx ; look_for_filename counter
         sub cx, ax ; Substract
@@ -529,7 +564,7 @@ os_fs_get_subfile_inode:
     jmp .load_blocks
 .found_name:
     pop eax
-    mov eax, [bx]
+    mov eax, [ebx]
     clc
     jmp .done
 
@@ -544,32 +579,36 @@ os_fs_get_subfile_inode:
     ret
 
 ; IN = ESI: filename
-; OUT = ES:BX points to inode
+; OUT = EBX points to inode
 os_fs_load_file_inode:
     push eax
     ; Fetch the root directory, and find the sub-file's inode.
     ; It's in inode 2
     mov eax, 2 
-    mov bx, disk_buffer
+    mov ebx, disk_buffer
     call os_fs_get_subfile_inode
 
 
     ; Load the inode
-    mov bx, disk_buffer
+    mov ebx, disk_buffer
     call os_fs_load_inode
     clc
     pop eax
     ret
 
-; IN = ES:BX: points to the inode, EAX: Block number, EDI: Offset
-; OUT = ES:BX points to the block, carry set if file size exceeded
+; IN = EBX: points to the inode, EAX: Block number, EDI: Offset
+; OUT = EBX points to the block, carry set if file size exceeded
 os_fs_load_inode_block:
     push edi
+
     call os_fs_get_file_block
     jc .fail
-    mov bx, disk_buffer
+
+    mov ebx, disk_buffer
     pop edi
+
     call os_fs_load_block
+    mov ebx, disk_buffer
 
     jmp .ok
 .fail:
@@ -580,6 +619,47 @@ os_fs_load_inode_block:
     clc
 .done:
     ret
+
+os_fs_get_path_inode:
+    push esi
+    push ebx
+    push edx
+
+    mov ebx, esi
+    mov edx, 2
+    .find_slash:
+
+        mov al, [ebx]
+
+        cmp al, "/"
+        je .is_slash
+        cmp al, 0
+        je .end
+        jmp .next
+
+        .is_slash:
+            mov eax, edx
+            call os_fs_get_subfile_inode
+            mov edx, eax
+
+            mov esi, ebx
+            inc esi
+
+            mov byte [ebx], "/"
+        .next:
+            inc ebx
+            jmp .find_slash
+
+.end:
+    mov eax, edx
+    call os_fs_get_subfile_inode
+
+    pop edx
+    pop ebx
+    pop esi
+    ret
+
+
 
 superblock_buffer:
 times 1024 db 0

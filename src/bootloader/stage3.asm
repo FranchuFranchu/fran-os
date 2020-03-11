@@ -4,6 +4,7 @@ in_protected:
     mov esi, .protected_msg
     call pm_print_string
 
+
     ; stage2.asm loaded the kernel in disk_buffer
     ; but we want it at 0x100000
     mov eax, 0
@@ -13,8 +14,14 @@ in_protected:
     mov ecx, eax
     mov esi, kernel_buffer
     mov edi, 0x100000
-    rep movsd
-
+.copy:
+    mov al, [esi]
+    mov [edi], al
+    dec ecx
+    inc esi
+    inc edi
+    cmp ecx, 0
+    jne .copy
 
     mov eax, 15
     mov esi, .kernel_jumping
@@ -24,6 +31,7 @@ in_protected:
     mov esi, 0x100002
     call pm_print_string
 
+    mov eax, kernel_buffer
     jmp 0x100000
 
     .protected_msg db "Protected mode: Switched correctly", 0
