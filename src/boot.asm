@@ -82,6 +82,17 @@ gdt_desc:
    dw gdt_end - gdt - 1
    dd gdt
 
+
+; IN = EAX: Page table address (4KiB aligned), EBX: Future location of PDT, AL: Flags
+%define os_paging_make_pde mov [ebx], eax
+
+; IN = EAX: Physical address to map to (4KiB aligned) address, EBX: Future location of PDT, AL: Flags
+%define os_paging_make_pte mov [ebx], eax
+
+; OUT = AL: Common page flags
+%define os_paging_set_default_page_flags mov al, 111b
+
+
 global _start:function (_start.end - _start)
 _start:
     ; The bootloader has loaded us into 32-bit protected mode on a x86
@@ -126,7 +137,51 @@ _start:
 
       mov esp, stack_top
     
-    mov dword [0xB8000], ': ) '
+
+    mov dword [0xB8000], ': ) ' 
+
+
+
+    mov ebx, 0
+    mov eax, os_paging_page_tables
+    os_paging_set_default_page_flags
+
+.fill_pdt:
+
+    mov [ebx+os_paging_page_directory_table], eax
+
+    add eax, 1024*4
+    add ebx, 4
+    cmp ebx, 1024*4
+    jne .fill_pdt
+
+
+    mov eax, 0
+    mov ebx, 0
+    os_paging_set_default_page_flags
+
+.fill_pages:
+
+    mov [ebx+os_paging_page_tables], eax    
+    
+    add ebx, 4
+    add eax, 4096    
+
+    cmp ebx, 1024*1024*4
+    jne .fill_pages
+
+
+
+
+    mov eax, os_paging_page_directory_table
+    mov cr3, eax
+     
+    mov eax, cr0
+    or eax, 0x80000001
+    mov cr0, eax
+
+
+    mov dword [0xB8000], ': / '
     ; Enter the high-level kernel. The ABI requires the stack is 16-byte
     ; aligned at the time of the call instruction (which afterwards pushes
     ; the return pointer of size 4 bytes). The stack was originally 16-byte
@@ -151,3 +206,10 @@ _start:
 .hang:  hlt
     jmp .hang
 .end:
+align 4096
+os_paging_page_directory_table:
+times 1024 dd 0
+os_paging_page_tables:
+%rep 1024
+    times 1024 dd 0
+%endrep

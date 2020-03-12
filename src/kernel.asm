@@ -37,6 +37,7 @@ kernel_main:
     call os_ata_pio_setup
     call os_fs_setup
 
+
     %define sample_file_loading
     %ifdef sample_file_loading 
     mov esi, .filename
