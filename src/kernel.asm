@@ -3,6 +3,8 @@ BITS 32
 %define MULTIBOOT_SIZE 16
 %define BASE_OF_SECTION 0;0x100000 + MULTIBOOT_SIZE
 
+%include "features/idt.asm"
+
 %include "features/cpuid.asm"
 %include "features/debugging.asm"
 %include "features/eventqueue.asm"
@@ -11,8 +13,8 @@ BITS 32
 %include "features/font.asm"
 %include "features/gdt.asm"
 %include "features/halt_for_key.asm"
-%include "features/idt.asm"
 %include "features/keyboard.asm"
+%include "features/paging.asm"
 %include "features/storage/ata_pio.asm"
 %include "features/string.asm"
 %include "features/terminal.asm"
