@@ -4,7 +4,11 @@ MEMINFO  equ  1 << 1            ; provide memory map
 FLAGS    equ  MBALIGN | MEMINFO ; this is the Multiboot 'flag' field
 MAGIC    equ  0x1BADB002        ; 'magic number' lets bootloader find the header
 CHECKSUM equ -(MAGIC + FLAGS)   ; checksum of above, to prove we are multiboot
- 
+
+; Offset which boot.asm is built with
+KERNEL_VIRTUAL_BASE equ 0xC0000000                  ; 3GB
+KERNEL_PAGE_NUMBER equ (KERNEL_VIRTUAL_BASE >> 22)  ; Page directory index of kernel's 4MB PTE.
+
 ; Declare a multiboot header that marks the program as a kernel. These are magic
 ; values that are documented in the multiboot standard. The bootloader will
 ; search for this signature in the first 8 KiB of the kernel file, aligned at a
@@ -32,6 +36,21 @@ stack_bottom:
 resb 16384 ; 16 KiB
 stack_top:
 
+section .data
+
+page_directory:
+    ; This page directory entry identity-maps the first 4MB of the 32-bit physical address space.
+    ; All bits are clear except the following:
+    ; bit 7: PS The kernel page is 4MB.
+    ; bit 1: RW The kernel page is read/write.
+    ; bit 0: P  The kernel page is present.
+    ; This entry must be here -- otherwise the kernel will crash immediately after paging is
+    ; enabled because it can't fetch the next instruction! It's ok to unmap this page later.
+    dd 0x00000083
+    times (KERNEL_PAGE_NUMBER - 1) dd 0                 ; Pages before kernel space.
+    ; This page directory entry defines a 4MB page containing the kernel.
+    dd 0x00000083
+    times (1024 - KERNEL_PAGE_NUMBER - 1) dd 0  ; Pages after the kernel image.
  
 ; The linker script specifies _start as the entry point to the kernel and the
 ; bootloader will jump to this position once the kernel has been loaded. It
@@ -80,7 +99,7 @@ gdt_end:
  
 gdt_desc:
    dw gdt_end - gdt - 1
-   dd gdt
+   dd gdt-KERNEL_VIRTUAL_BASE
 
 
 ; IN = EAX: Page table address (4KiB aligned), EBX: Future location of PDT, AL: Flags
@@ -116,18 +135,19 @@ _start:
     ; runtime support to work as well.
      
     
-    mov esp, stack_top
+    
+    mov esp, stack_top-KERNEL_VIRTUAL_BASE
 
     cli
     .os_gdt_setup:
-        lgdt [gdt_desc]  ;load GDT
+        lgdt [gdt_desc-KERNEL_VIRTUAL_BASE]  ;load GDT
     mov ax, 0x10
     mov ds, ax
 
     mov es, ax
     mov fs, ax
     mov gs, ax
-    jmp 0x08:.update_stack
+    jmp 0x08:.update_stack-KERNEL_VIRTUAL_BASE
     .update_stack:
       mov ax, 0x10
       mov ss, ax
@@ -135,53 +155,43 @@ _start:
       ; stack (as it grows downwards on x86 systems). This is necessarily done
       ; in assembly as languages such as C cannot function without a stack.
 
-      mov esp, stack_top
-    
-
-    mov dword [0xB8000], ': ) ' 
+      mov esp, stack_top-KERNEL_VIRTUAL_BASE
 
 
+    ; NOTE: Until paging is set up, the code must be position-independent and use physical
+    ; addresses, not virtual ones!
+    mov ecx, (page_directory - KERNEL_VIRTUAL_BASE)
+    mov cr3, ecx                                        ; Load Page Directory Base Register.
+ 
+    mov ecx, cr4
+    or ecx, 0x00000010                          ; Set PSE bit in CR4 to enable 4MB pages.
+    mov cr4, ecx
+ 
+    mov ecx, cr0
+    or ecx, 0x80000000                          ; Set PG bit in CR0 to enable paging.
+    mov cr0, ecx
+ 
+    ; Start fetching instructions in kernel space.
+    ; Since eip at this point holds the physical address of this command (approximately 0x00100000)
+    ; we need to do a long jump to the correct virtual address of StartInHigherHalf which is
+    ; approximately 0xC0100000.
+    lea ecx, [.on_higher_half]
+    jmp ecx                                                     ; NOTE: Must be absolute jump!
+ 
+.on_higher_half:
+ 
+    ; NOTE: From now on, paging should be enabled. The first 4MB of physical address space is
+    ; mapped starting at KERNEL_VIRTUAL_BASE. Everything is linked to this address, so no more
+    ; position-independent code or funny business with virtual-to-physical address translation
+    ; should be necessary. We now have a higher-half kernel.
+    mov esp, stack_top           ; set up the stack
+    push eax                           ; pass Multiboot magic number
+ 
+    ; pass Multiboot info structure -- WARNING: This is a physical address and may not be
+    ; in the first 4MB!
+    push ebx
+ 
 
-    mov ebx, 0
-    mov eax, os_paging_page_tables
-    os_paging_set_default_page_flags
-
-.fill_pdt:
-
-    mov [ebx+os_paging_page_directory_table], eax
-
-    add eax, 1024*4
-    add ebx, 4
-    cmp ebx, 1024*4
-    jne .fill_pdt
-
-
-    mov eax, 0
-    mov ebx, 0
-    os_paging_set_default_page_flags
-
-.fill_pages:
-
-    mov [ebx+os_paging_page_tables], eax    
-    
-    add ebx, 4
-    add eax, 4096    
-
-    cmp ebx, 1024*1024*4
-    jne .fill_pages
-
-
-
-
-    mov eax, os_paging_page_directory_table
-    mov cr3, eax
-     
-    mov eax, cr0
-    or eax, 0x80000001
-    mov cr0, eax
-
-
-    mov dword [0xB8000], ': / '
     ; Enter the high-level kernel. The ABI requires the stack is 16-byte
     ; aligned at the time of the call instruction (which afterwards pushes
     ; the return pointer of size 4 bytes). The stack was originally 16-byte
@@ -190,7 +200,7 @@ _start:
     ; preserved and the call is well defined.
         ; note, that if you are building on Windows, C functions may have "_" prefix in assembly: _kernel_main
     extern kernel_main
-    call kernel_main
+    jmp kernel_main
  
     ; If the system has nothing more to do, put the computer into an
     ; infinite loop. To do that:
@@ -206,10 +216,3 @@ _start:
 .hang:  hlt
     jmp .hang
 .end:
-align 4096
-os_paging_page_directory_table:
-times 1024 dd 0
-os_paging_page_tables:
-%rep 1024
-    times 1024 dd 0
-%endrep

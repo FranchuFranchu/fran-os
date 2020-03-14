@@ -2,6 +2,8 @@
 echo "" > log.log
 cd src
 nasm -felf32 boot.asm -o boot.o
+
+
 if nasm -felf32 kernel.asm -o kernel.o; then
     echo "Built kernel"
 else

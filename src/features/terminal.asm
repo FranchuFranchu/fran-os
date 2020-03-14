@@ -1,5 +1,6 @@
 BITS 32
 
+VGA_BUFFER equ 0xC00B8000; 0xB8000
 VGA_WIDTH equ 80
 VGA_HEIGHT equ 25
 
@@ -51,8 +52,8 @@ os_terminal_clear_screen:
 
 
 .loopy:
-    mov byte [0xB8000 + ecx], 0x20
-    mov byte [0xB8000 + ecx + 1], 0x0
+    mov byte [VGA_BUFFER + ecx], 0x20
+    mov byte [VGA_BUFFER + ecx + 1], 0x0
     cmp ecx, 0
     je .done
     sub ecx, 2
@@ -61,7 +62,7 @@ os_terminal_clear_screen:
 .done:
     ret
 ; IN = dl: y, dh: x
-; OUT = edx: Index with offset 0xB8000 at VGA buffer
+; OUT = edx: Index with offset VGA_BUFFER at VGA buffer
 ; Other registers preserved
 os_terminal_getidx:
     push eax; preserve registers
@@ -100,7 +101,7 @@ os_terminal_putentryat:
     mov ebx, edx
 
     mov dl, [os_terminal_color]
-    mov byte [0xB8000 + ebx], al
+    mov byte [VGA_BUFFER + ebx], al
     mov byte [0xB8001 + ebx], dl
 
 
@@ -114,11 +115,11 @@ os_terminal_put_none_if_space:
     pusha
     mov ebx, edx
 
-    cmp byte [0xB8000 + ebx], 0x20
+    cmp byte [VGA_BUFFER + ebx], 0x20
     jne .notspace
 
     mov dl, [os_terminal_color]    
-    mov byte [0xB8000 + ebx], 0x0
+    mov byte [VGA_BUFFER + ebx], 0x0
     mov byte [0xB8001 + ebx], dl
 
 .notspace:
@@ -168,7 +169,7 @@ os_terminal_putchar:
 
     ret
 
-; IN = cx: length of string, ESI: string location
+; IN = ECX: length of string, ESI: string location
 ; OUT = none
 os_terminal_write:
     pusha
@@ -177,8 +178,8 @@ os_terminal_write:
     mov al, [esi]
     call os_terminal_putchar
 
-    dec cx
-    cmp cx, 0
+    dec ecx
+    cmp ecx, 0
     je .done
 
     inc esi

@@ -1,3 +1,5 @@
+section .text
+
 BITS 32
 
 %define MULTIBOOT_SIZE 16
@@ -28,12 +30,13 @@ kernel_main:
     call os_terminal_set_color
     call os_terminal_setup
 
+
     call os_idt_setup
     call os_exception_handler_setup
 
     call os_keyboard_setup
     call os_eventqueue_setup
-    call os_font_setup
+    ;call os_font_setup
     call os_ata_pio_setup
     call os_fs_setup
 

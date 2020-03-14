@@ -39,6 +39,7 @@ os_pit_counter dd 0 ; loops back on 2**32 ns, or 3600 seconds (an hour)
 
 os_pit_irq_handler:
     pusha
+
     call os_execute_all_eventqueues
     call os_eventqueue_oscillation_pit
 
