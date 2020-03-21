@@ -102,7 +102,7 @@ os_terminal_putentryat:
 
     mov dl, [os_terminal_color]
     mov byte [VGA_BUFFER + ebx], al
-    mov byte [0xB8001 + ebx], dl
+    mov byte [VGA_BUFFER + 1 + ebx], dl
 
 
     popa
@@ -120,7 +120,7 @@ os_terminal_put_none_if_space:
 
     mov dl, [os_terminal_color]    
     mov byte [VGA_BUFFER + ebx], 0x0
-    mov byte [0xB8001 + ebx], dl
+    mov byte [VGA_BUFFER + 1 + ebx], dl
 
 .notspace:
     popa

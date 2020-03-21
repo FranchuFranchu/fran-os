@@ -4,19 +4,19 @@ os_exception_fault:
 
     mov bl, 0x4F
     mov esi, .errmsg2
-    mov edi, 0xB8000 + VGA_WIDTH * 2 * 2
+    mov edi, VGA_BUFFER + VGA_WIDTH * 2 * 2
     call os_exception_handler_print_string
 
     mov esi, .errmsg3
-    mov edi, 0xB8000 + VGA_WIDTH * 2 * 3
+    mov edi, VGA_BUFFER + VGA_WIDTH * 2 * 3
     call os_exception_handler_print_string
 
     mov esi, .errmsg4
-    mov edi, 0xB8000 + VGA_WIDTH * 2 * 4
+    mov edi, VGA_BUFFER + VGA_WIDTH * 2 * 4
     call os_exception_handler_print_string
 
     mov esi, .errmsg5
-    mov edi, 0xB8000 + VGA_WIDTH * 2 * 5
+    mov edi, VGA_BUFFER + VGA_WIDTH * 2 * 5
     call os_exception_handler_print_string
 
     .waitfork:
@@ -48,7 +48,7 @@ os_exception_fault:
     ; Highlight option with blue
     mov bl, 0x4B
     mov esi, .errmsg3
-    mov edi, 0xB8000 + VGA_WIDTH * 2 * 3
+    mov edi, VGA_BUFFER + VGA_WIDTH * 2 * 3
     call os_exception_handler_print_string
 
     jmp os_shutdown
@@ -56,7 +56,7 @@ os_exception_fault:
     ; Highlight option with blue
     mov bl, 0x4B
     mov esi, .errmsg4
-    mov edi, 0xB8000 + VGA_WIDTH * 2 * 4
+    mov edi, VGA_BUFFER + VGA_WIDTH * 2 * 4
     call os_exception_handler_print_string
     
     jmp os_restart
@@ -64,7 +64,7 @@ os_exception_fault:
     ; Highlight option with blue
     mov bl, 0x4B
     mov esi, .errmsg2
-    mov edi, 0xB8000 + VGA_WIDTH * 2 * 2
+    mov edi, VGA_BUFFER + VGA_WIDTH * 2 * 2
     call os_exception_handler_print_string
     
     ret
@@ -72,7 +72,7 @@ os_exception_fault:
     ; Highlight option with blue
     mov bl, 0x4B
     mov esi, .errmsg5
-    mov edi, 0xB8000 + VGA_WIDTH * 2 * 5
+    mov edi, VGA_BUFFER + VGA_WIDTH * 2 * 5
     call os_exception_handler_print_string
     
     jmp os_halt
@@ -111,23 +111,23 @@ os_exception_handler_insert_eax:
 
 
 os_exception_handler_print_string:
-    .loopy:
-        lodsb
-        cmp al, 0
-        je .done
-        mov byte [edi], al
-        inc edi
-        mov byte [edi], bl
-        inc edi
-        jmp .loopy
-    .done:
+.loopy:
+    lodsb
+    cmp al, 0
+    je .done
+    mov byte [edi], al
+    inc edi
+    mov byte [edi], bl
+    inc edi
+    jmp .loopy
+.done:
     ret
 
 os_exception_handler_setup:
     call os_exception_handler_define_int
     ret
 os_exception_handler_define_int:
-    
+
     mov eax, os_exception_handler_00
     mov ebx, 00h
     call os_define_interrupt
@@ -218,7 +218,7 @@ os_exception_handler_00:
     call os_terminal_clear_screen
 
     mov esi, .errmsg
-    mov edi, 0xB8000
+    mov edi, VGA_BUFFER
     mov bl, 0x4F
     call os_exception_handler_print_string
 
@@ -237,7 +237,7 @@ os_exception_handler_01:
     call os_terminal_clear_screen
 
     mov esi, .errmsg
-    mov edi, 0xB8000
+    mov edi, VGA_BUFFER
     mov bl, 0x4F
     call os_exception_handler_print_string
 
@@ -257,15 +257,15 @@ os_exception_handler_02:
     mov bl, 0x4F
 
     mov esi, .errmsg
-    mov edi, 0xB8000
+    mov edi, VGA_BUFFER
     call os_exception_handler_print_string
 
     mov esi, .errmsg2
-    mov edi, 0xB8000 + VGA_WIDTH * 2 * 2
+    mov edi, VGA_BUFFER + VGA_WIDTH * 2 * 2
     call os_exception_handler_print_string
 
     mov esi, .errmsg3
-    mov edi, 0xB8000 + VGA_WIDTH * 2 * 3
+    mov edi, VGA_BUFFER + VGA_WIDTH * 2 * 3
     call os_exception_handler_print_string
 
     jmp os_halt
@@ -285,7 +285,7 @@ os_exception_handler_03:
     call os_terminal_clear_screen
 
     mov esi, .errmsg
-    mov edi, 0xB8000
+    mov edi, VGA_BUFFER
     mov bl, 0x4F
     call os_exception_handler_print_string
 
@@ -304,7 +304,7 @@ os_exception_handler_04:
     call os_terminal_clear_screen
 
     mov esi, .errmsg
-    mov edi, 0xB8000
+    mov edi, VGA_BUFFER
     mov bl, 0x4F
     call os_exception_handler_print_string
 
@@ -323,7 +323,7 @@ os_exception_handler_05:
     call os_terminal_clear_screen
 
     mov esi, .errmsg
-    mov edi, 0xB8000
+    mov edi, VGA_BUFFER
     mov bl, 0x4F
     call os_exception_handler_print_string
 
@@ -342,7 +342,7 @@ os_exception_handler_06:
     call os_terminal_clear_screen
 
     mov esi, .errmsg
-    mov edi, 0xB8000
+    mov edi, VGA_BUFFER
     mov bl, 0x4F
     call os_exception_handler_print_string
 
@@ -361,7 +361,7 @@ os_exception_handler_07:
     call os_terminal_clear_screen
 
     mov esi, .errmsg
-    mov edi, 0xB8000
+    mov edi, VGA_BUFFER
     mov bl, 0x4F
     call os_exception_handler_print_string
 
@@ -381,15 +381,15 @@ os_exception_handler_08:
     mov bl, 0x4F
 
     mov esi, .errmsg
-    mov edi, 0xB8000
+    mov edi, VGA_BUFFER
     call os_exception_handler_print_string
 
     mov esi, .errmsg2
-    mov edi, 0xB8000 + VGA_WIDTH * 2 * 2
+    mov edi, VGA_BUFFER + VGA_WIDTH * 2 * 2
     call os_exception_handler_print_string
 
     mov esi, .errmsg3
-    mov edi, 0xB8000 + VGA_WIDTH * 2 * 3
+    mov edi, VGA_BUFFER + VGA_WIDTH * 2 * 3
     call os_exception_handler_print_string
 
     jmp os_halt
@@ -409,7 +409,7 @@ os_exception_handler_09:
     call os_terminal_clear_screen
 
     mov esi, .errmsg
-    mov edi, 0xB8000
+    mov edi, VGA_BUFFER
     mov bl, 0x4F
     call os_exception_handler_print_string
 
@@ -429,7 +429,7 @@ os_exception_handler_0a:
     call os_terminal_clear_screen
 
     mov esi, .errmsg
-    mov edi, 0xB8000
+    mov edi, VGA_BUFFER
     mov bl, 0x4F
     call os_exception_handler_print_string
 
@@ -449,7 +449,7 @@ os_exception_handler_0b:
     call os_terminal_clear_screen
 
     mov esi, .errmsg
-    mov edi, 0xB8000
+    mov edi, VGA_BUFFER
     mov bl, 0x4F
     call os_exception_handler_print_string
 
@@ -469,7 +469,7 @@ os_exception_handler_0c:
     call os_terminal_clear_screen
 
     mov esi, .errmsg
-    mov edi, 0xB8000
+    mov edi, VGA_BUFFER
     mov bl, 0x4F
     call os_exception_handler_print_string
 
@@ -489,7 +489,7 @@ os_exception_handler_0d:
     call os_terminal_clear_screen
 
     mov esi, .errmsg
-    mov edi, 0xB8000
+    mov edi, VGA_BUFFER
     mov bl, 0x4F
     call os_exception_handler_print_string
 
@@ -509,7 +509,7 @@ os_exception_handler_0e:
     call os_terminal_clear_screen
 
     mov esi, .errmsg
-    mov edi, 0xB8000
+    mov edi, VGA_BUFFER
     mov bl, 0x4F
     call os_exception_handler_print_string
 
@@ -528,7 +528,7 @@ os_exception_handler_10:
     call os_terminal_clear_screen
 
     mov esi, .errmsg
-    mov edi, 0xB8000
+    mov edi, VGA_BUFFER
     mov bl, 0x4F
     call os_exception_handler_print_string
 
@@ -548,7 +548,7 @@ os_exception_handler_11:
     call os_terminal_clear_screen
 
     mov esi, .errmsg
-    mov edi, 0xB8000
+    mov edi, VGA_BUFFER
     mov bl, 0x4F
     call os_exception_handler_print_string
 
@@ -568,15 +568,15 @@ os_exception_handler_12:
     mov bl, 0x4F
 
     mov esi, .errmsg
-    mov edi, 0xB8000
+    mov edi, VGA_BUFFER
     call os_exception_handler_print_string
 
     mov esi, .errmsg2
-    mov edi, 0xB8000 + VGA_WIDTH * 2 * 2
+    mov edi, VGA_BUFFER + VGA_WIDTH * 2 * 2
     call os_exception_handler_print_string
 
     mov esi, .errmsg3
-    mov edi, 0xB8000 + VGA_WIDTH * 2 * 3
+    mov edi, VGA_BUFFER + VGA_WIDTH * 2 * 3
     call os_exception_handler_print_string
 
     jmp os_halt
@@ -596,7 +596,7 @@ os_exception_handler_13:
     call os_terminal_clear_screen
 
     mov esi, .errmsg
-    mov edi, 0xB8000
+    mov edi, VGA_BUFFER
     mov bl, 0x4F
     call os_exception_handler_print_string
 
@@ -615,7 +615,7 @@ os_exception_handler_14:
     call os_terminal_clear_screen
 
     mov esi, .errmsg
-    mov edi, 0xB8000
+    mov edi, VGA_BUFFER
     mov bl, 0x4F
     call os_exception_handler_print_string
 

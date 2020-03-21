@@ -16,11 +16,11 @@ BITS 32
 %include "features/gdt.asm"
 %include "features/halt_for_key.asm"
 %include "features/keyboard.asm"
-%include "features/paging.asm"
 %include "features/storage/ata_pio.asm"
 %include "features/string.asm"
 %include "features/terminal.asm"
 
+extern os_multiboot_info_pointer
 global kernel_main
 kernel_main:
     call os_terminal_clear_screen
@@ -33,16 +33,15 @@ kernel_main:
 
     call os_idt_setup
     call os_exception_handler_setup
+    call os_eventqueue_setup
 
     call os_keyboard_setup
-    call os_eventqueue_setup
-    ;call os_font_setup
+    ;call os_font_setup Not working due to paging
+    
     call os_ata_pio_setup
     call os_fs_setup
+    call os_paging_setup
 
-
-    %define sample_file_loading
-    %ifdef sample_file_loading 
     mov esi, .filename
     call os_fs_get_subfile_inode
     call os_fs_load_inode
@@ -52,14 +51,13 @@ kernel_main:
 
     mov esi, disk_buffer
     call os_terminal_write_string
-    %endif
-
+    call disk_buffer
 
 
     jmp os_sleep
 
     
-.filename db "potato.txt"
+.filename db "test.bin"
     
 
 os_sleep:
@@ -132,3 +130,5 @@ disk_buffer:
     times 2048   db 0
     
 hello_string db "Hello, kernel World!", 0xA, 0 ; 0xA = line feed
+
+%include "features/paging.asm"

@@ -6,6 +6,7 @@ FMT_SETUP = '''
     call os_define_interrupt
     '''
 
+
 FMT_STR = '''
 os_exception_handler_{hexcode:0>2}:{pop_error_code}
     
@@ -28,15 +29,15 @@ ABORT_TEXT = '''
     mov bl, 0x4F
 
     mov esi, .errmsg
-    mov edi, 0xB8000
+    mov edi, VGA_BUFFER
     call os_exception_handler_print_string
 
     mov esi, .errmsg2
-    mov edi, 0xB8000 + VGA_WIDTH * 2 * 2
+    mov edi, VGA_BUFFER + VGA_WIDTH * 2 * 2
     call os_exception_handler_print_string
 
     mov esi, .errmsg3
-    mov edi, 0xB8000 + VGA_WIDTH * 2 * 3
+    mov edi, VGA_BUFFER + VGA_WIDTH * 2 * 3
     call os_exception_handler_print_string
 
     jmp os_halt
@@ -48,7 +49,7 @@ FAULT_TEXT = '''
     call os_terminal_clear_screen
 
     mov esi, .errmsg
-    mov edi, 0xB8000
+    mov edi, VGA_BUFFER
     mov bl, 0x4F
     call os_exception_handler_print_string
 
@@ -85,19 +86,19 @@ os_exception_fault:
 
     mov bl, 0x4F
     mov esi, .errmsg2
-    mov edi, 0xB8000 + VGA_WIDTH * 2 * 2
+    mov edi, VGA_BUFFER + VGA_WIDTH * 2 * 2
     call os_exception_handler_print_string
 
     mov esi, .errmsg3
-    mov edi, 0xB8000 + VGA_WIDTH * 2 * 3
+    mov edi, VGA_BUFFER + VGA_WIDTH * 2 * 3
     call os_exception_handler_print_string
 
     mov esi, .errmsg4
-    mov edi, 0xB8000 + VGA_WIDTH * 2 * 4
+    mov edi, VGA_BUFFER + VGA_WIDTH * 2 * 4
     call os_exception_handler_print_string
 
     mov esi, .errmsg5
-    mov edi, 0xB8000 + VGA_WIDTH * 2 * 5
+    mov edi, VGA_BUFFER + VGA_WIDTH * 2 * 5
     call os_exception_handler_print_string
 
     .waitfork:
@@ -129,7 +130,7 @@ os_exception_fault:
     ; Highlight option with blue
     mov bl, 0x4B
     mov esi, .errmsg3
-    mov edi, 0xB8000 + VGA_WIDTH * 2 * 3
+    mov edi, VGA_BUFFER + VGA_WIDTH * 2 * 3
     call os_exception_handler_print_string
 
     jmp os_shutdown
@@ -137,7 +138,7 @@ os_exception_fault:
     ; Highlight option with blue
     mov bl, 0x4B
     mov esi, .errmsg4
-    mov edi, 0xB8000 + VGA_WIDTH * 2 * 4
+    mov edi, VGA_BUFFER + VGA_WIDTH * 2 * 4
     call os_exception_handler_print_string
     
     jmp os_restart
@@ -145,7 +146,7 @@ os_exception_fault:
     ; Highlight option with blue
     mov bl, 0x4B
     mov esi, .errmsg2
-    mov edi, 0xB8000 + VGA_WIDTH * 2 * 2
+    mov edi, VGA_BUFFER + VGA_WIDTH * 2 * 2
     call os_exception_handler_print_string
     
     ret
@@ -153,7 +154,7 @@ os_exception_fault:
     ; Highlight option with blue
     mov bl, 0x4B
     mov esi, .errmsg5
-    mov edi, 0xB8000 + VGA_WIDTH * 2 * 5
+    mov edi, VGA_BUFFER + VGA_WIDTH * 2 * 5
     call os_exception_handler_print_string
     
     jmp os_halt

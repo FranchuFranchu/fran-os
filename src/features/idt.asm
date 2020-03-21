@@ -101,6 +101,7 @@ os_define_interrupt:
     mov word [os_idt+ebx*8+2],8h   
     mov byte [os_idt+ebx*8+4],0
     mov byte [os_idt+ebx*8+5],10001110b
-    shr eax,16
+    ror eax, 16
     mov word [os_idt+ebx*8+6],ax
+    rol eax, 16
     ret

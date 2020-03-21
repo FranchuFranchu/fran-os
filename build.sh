@@ -17,17 +17,7 @@ PATH=$PATH:/usr/local/cross/bin
 i686-elf-gcc -T ../linker.ld -o ../disk-images/os_hda.img -ffreestanding -O2 -nostdlib boot.o kernel.o -lgcc
 cd ..
 
-rm disk-images/os_hdb.img
-dd status=noxfer conv=notrunc if=/dev/zero of=disk-images/os_hdb.img bs=32256 count=16
-mkfs.ext2 disk-images/os_hdb.img
-# Mount it 
-rm -rf tmp-loop
-mkdir tmp-loop
-mount -o loop disk-images/os_hdb.img tmp-loop
 
-cp -r guest-filesystem/* tmp-loop
-
-umount tmp-loop || exit
 
 
 if grub-file --is-x86-multiboot disk-images/os_hda.img; then
@@ -36,7 +26,13 @@ if grub-file --is-x86-multiboot disk-images/os_hda.img; then
     mkdir -p isodir/boot/grub
     cp disk-images/os_hda.img isodir/boot/os.bin
     grub-mkrescue -o disk-images/os_hda.img isodir
-    qemu-system-i386 -monitor stdio -drive file=disk-images/os_hda.img,format=raw,index=0,media=disk -drive file=disk-images/os_hdb.img,format=raw,index=1,media=disk -d int,guest_errors -D log.log
+    qemu-system-i386   \
+        -monitor stdio \
+        -drive file=disk-images/os_hda.img,format=raw,index=0,media=disk \
+        -drive file=disk-images/os_hdb.img,format=raw,index=1,media=disk \
+        -d int,guest_errors \
+        -D log.log \
+        -m 64M
     
     #bochs -f bochsrc
 else

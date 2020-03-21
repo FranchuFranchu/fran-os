@@ -20,6 +20,7 @@ SECTIONS
     .data ALIGN (4K) : AT (ADDR (.data) - 0xC0000000)
     {
         *(.data)
+        *(.pagetable)   
     }
     .bss ALIGN (4K) : AT (ADDR (.bss) - 0xC0000000)
     {
@@ -29,4 +30,6 @@ SECTIONS
     }
     /* Add a symbol that indicates the end address of the kernel. */
     _kernel_end = .;
+    _kernel_pages = ((_kernel_end - _kernel_start + 0x100000) >> 20) * 4 + 1;
+    _kernel_page_index_end = (_kernel_pages * 4) + (0xC0000000 >> 18);
 }

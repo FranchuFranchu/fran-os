@@ -30,7 +30,7 @@ os_font_setup:
     mov         dx, 03ceh
     mov         ax, 5
     out         dx, ax
-    ;map VGA memory to 0A0000h
+    ;map VGA memory to 0C00A000h
     mov         ax, 0406h
     out         dx, ax
     ;set bitplane 2
@@ -41,7 +41,7 @@ os_font_setup:
     mov         ax, 0604h
     out         dx, ax
     ;copy charmap
-    mov         edi, 0A0000h + 0xFF * 32
+    mov         edi, 0C00A0000h + 0xFF * 32
     mov         ecx, 256
     ;copy 16 bytes to bitmap
     movsd
