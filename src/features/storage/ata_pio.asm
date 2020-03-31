@@ -1,3 +1,5 @@
+BITS 32
+
 ATA_PRIMARY_DATA equ 0x1F0
 ATA_SECONDARY_DATA equ 0x170
 ATA_PRIMARY_CONTROL equ 0x3F6
@@ -21,9 +23,6 @@ os_ata_pio_read:
     jne .busy
     mov dword [os_ata_pio_pointer_to_buffer], edi
 
-
-    mov     dx, ATA_PRIMARY_DATA + 7 ; Status port
-    in      al, dx   ; Haven't found a use for this yet        
 
 
     mov     dx, ATA_PRIMARY_DATA + 6         ; Drive and head port
@@ -57,12 +56,23 @@ os_ata_pio_read:
 
     out     dx, al
 
+    sti
     mov     dx, ATA_PRIMARY_DATA + 7 ; Command port
     mov     al, 0x20          ; Read sectors
     out     dx, al
 
+    mov     dx, ATA_PRIMARY_DATA + 7 ; Status port
+
+.poll:
+    in  al, dx  
+    and al, 0x28 ; Test if either DF or ERR is set
+    jz .poll
+
+
+    int 2eh
 
     clc
+
     popa
     ret
 .busy:
@@ -79,12 +89,11 @@ os_ata_pio_irq_handler:
 
     mov ecx, 0x200 ; Must transfer 512 bytes
     mov edi, [os_ata_pio_pointer_to_buffer]
+
     mov dx, ATA_PRIMARY_DATA
 .loopy:
     in ax, dx
-
     mov [edi], ax
-
 
     add edi, 2
     sub ecx, 2

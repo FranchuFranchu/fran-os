@@ -91,20 +91,30 @@ gdt_data:
   .access db 10010010b
   .limit_and_flags db 11001111b
   .base_24_31 db 0x0
-
-gdt_stack:
+%ifdef usergdt
+gdt_user_code:
   .limit_0_15 dw 0xFFFF
-  .base_0_15 dw 0xFFFF
+  .base_0_15 dw 0
  
-  .base_16_23 db 0xFF
-  .access db 10010110b
+  .base_16_23 db 0
+  .access db 11111010b
   .limit_and_flags db 11001111b
-  .base_24_31 db 0xFF
+  .base_24_31 db 0
+
+gdt_user_data:
+  .limit_0_15 dw 0xFFFF
+  .base_0_15 dw 0x0
+ 
+  .base_16_23 db 0x0
+  .access db 11110010b
+  .limit_and_flags db 11001111b
+  .base_24_31 db 0x0
+%endif
 gdt_end:
  
 gdt_desc:
-   dw gdt_end - gdt - 1
-   dd gdt-KERNEL_VIRTUAL_BASE
+  .size: dw gdt_end - gdt - 1
+  .offset: dd gdt-KERNEL_VIRTUAL_BASE
 
 
 ; IN = EAX: Page table address (4KiB aligned), EBX: Future location of PDT, AL: Flags
@@ -193,8 +203,8 @@ _start:
 .on_higher_half:
  
 
-    ;mov dword [page_directory], 0
-    ;invlpg [0]
+    mov dword [page_directory], 0
+    invlpg [0]
  
 
     ; NOTE: From now on, paging should be enabled. The first 4MB of physical address space is
@@ -209,7 +219,6 @@ _start:
     push ebx
  
     mov dword [0xC00B8000], "s 4 "
-
     ; Enter the high-level kernel. The ABI requires the stack is 16-byte
     ; aligned at the time of the call instruction (which afterwards pushes
     ; the return pointer of size 4 bytes). The stack was originally 16-byte

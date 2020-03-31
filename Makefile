@@ -3,7 +3,7 @@ CC = /usr/local/cross/bin/i686-elf-gcc
 src/boot.o: src/boot.asm
 	nasm -felf32 src/boot.asm -o src/boot.o
 
-src/kernel.o: src/kernel.asm src/features/*
+src/kernel.o: src/kernel.asm src/features/* src/features/storage/*
 	chmod -R 770 src
 	nasm -felf32 src/kernel.asm -o src/kernel.o -Isrc/
 

@@ -16,34 +16,48 @@ BITS 32
 %include "features/gdt.asm"
 %include "features/halt_for_key.asm"
 %include "features/keyboard.asm"
+%include "features/paging.asm"
 %include "features/storage/ata_pio.asm"
 %include "features/string.asm"
 %include "features/terminal.asm"
+%include "features/sysenter.asm"
 
 extern os_multiboot_info_pointer
+extern gdt_desc
 global kernel_main
 kernel_main:
+    lgdt [os_gdt_desc]
+
+    call os_terminal_setup
     call os_terminal_clear_screen
 
     mov dh, VGA_COLOR_LIGHT_GREY
     mov dl, VGA_COLOR_BLACK
     call os_terminal_set_color
-    call os_terminal_setup
-
 
     call os_idt_setup
     call os_exception_handler_setup
-    call os_eventqueue_setup
 
     call os_keyboard_setup
-    ;call os_font_setup Not working due to paging
-    
+
+
+    sti
+    ;call os_font_setup
     call os_ata_pio_setup
+    sti
+
+    mov esi, 0
+    mov edi, disk_buffer
+    mov ecx, 1
+    call os_ata_pio_read
+
+
     call os_fs_setup
-    call os_paging_setup
+
 
     mov esi, .filename
     call os_fs_get_subfile_inode
+    mov ebx, disk_buffer
     call os_fs_load_inode
     mov eax, 0
     mov edi, 0
@@ -51,14 +65,13 @@ kernel_main:
 
     mov esi, disk_buffer
     call os_terminal_write_string
-    call disk_buffer
+
 
 
     jmp os_sleep
 
     
-.filename db "test.bin"
-    
+.filename db "potato.txt"
 
 os_sleep:
     sti
@@ -130,5 +143,3 @@ disk_buffer:
     times 2048   db 0
     
 hello_string db "Hello, kernel World!", 0xA, 0 ; 0xA = line feed
-
-%include "features/paging.asm"

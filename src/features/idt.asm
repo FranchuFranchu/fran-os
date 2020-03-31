@@ -1,7 +1,5 @@
 BITS 32
 
-%define LINEAR_ADDRESS(x) (BASE_OF_SECTION + x - $$)
-
 %define PIC1        0x20        ; IO base address for master PIC 
 %define PIC2        0xA0        ; IO base address for slave PIC 
 %define PIC1_COMMAND    PIC1
@@ -23,6 +21,7 @@ BITS 32
 %define ICW4_BUF_MASTER 0x0C        ; Buffered mode/master 
 %define ICW4_SFNM   0x10        ; Special fully nested (not) 
 
+
 os_idt:
     times 0xFF dq 0   
 
@@ -32,7 +31,7 @@ os_idt_end:
 
 os_idt_info:
     .size dw os_idt_end - os_idt - 1
-    .pointer dd os_idt 
+    .pointer dd os_idt
 
 wait_some_time:
     mov ecx, 0xFFFFFFFF
@@ -84,19 +83,95 @@ os_idt_setup:
 
     ret
 
-; Clears all masks
+; Set masks as we want them to be
 pic_clear_mask:
+    
     in al, PIC1_DATA
-    and al, 11011100b
+    mov al, 0xFF
     out PIC1_DATA, al
     in al, PIC2_DATA
-    and al, 10111111b
+    mov al, 0xFF
     out PIC2_DATA, al
     ret
+
+; IN = EAX: IRQ number
+os_pic_allow_irq:
+    push eax
+    push ebx
+    push ecx
+
+    mov ecx, eax
+    mov ebx, 1
+
+    inc ecx
+    cmp ecx, 0x8
+    jg .pic2
+.pic1:
+    shl ebx, 1
+    loop .pic1
+    shr ebx, 1
+    not ebx
+
+
+    in al, PIC1_DATA
+    and al, bl
+
+    pusha
+    call os_string_convert_2hex
+    call os_terminal_putchar
+    shr eax, 8
+    call os_terminal_putchar
+    popa
+
+    out PIC1_DATA, al
+
+    jmp .end
+.pic2:
+
+    sub ecx, 0x8
+.picloop2:
+    shl ebx, 1
+    loop .picloop2
+    shr ebx, 1
+    not ebx
+    
+
+
+    in al, PIC2_DATA
+    and al, bl
+
+    pusha
+    call os_string_convert_2hex
+    call os_terminal_putchar
+    shr eax, 8
+    call os_terminal_putchar
+    popa
+    out PIC2_DATA, al
+
+    jmp .end
+
+.end:
+    pop ecx
+    pop ebx
+    pop eax
+    ret
+
 
 
 ; IN = EAX: Function to be jumped to, EBX: Interrupt number
 os_define_interrupt:
+    cmp ebx, 0x30
+    jge .noirq
+    cmp ebx, 0x20
+    jl .noirq
+
+    push eax
+    mov eax, ebx
+    sub eax, 0x20
+    call os_pic_allow_irq
+    pop eax
+
+.noirq:
     mov word [os_idt+ebx*8],ax
     mov word [os_idt+ebx*8+2],8h   
     mov byte [os_idt+ebx*8+4],0

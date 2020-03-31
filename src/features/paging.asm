@@ -40,7 +40,7 @@ os_paging_setup:
 
     dec ecx
 
-    mov ebx, 4
+    mov ebx, 0
 .fill_lower_half:
     cmp ecx, 0
     je .end
