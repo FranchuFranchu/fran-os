@@ -373,9 +373,7 @@ os_fs_load_inode:
 
     mov eax, edx
     mov eax, disk_buffer
-
     add ebx, edx
-
     mov eax, ebx
 
 
@@ -383,6 +381,8 @@ os_fs_load_inode:
     pop edx
     pop ecx
     pop eax
+
+
     ret
 
 ; Gets the location for the EAXth block that contains a file

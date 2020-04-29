@@ -44,17 +44,12 @@ kernel_main:
     sti
     ;call os_font_setup
     call os_ata_pio_setup
-    sti
-
-    mov esi, 0
-    mov edi, disk_buffer
-    mov ecx, 1
-    call os_ata_pio_read
 
 
     call os_fs_setup
 
 
+    mov eax, 2
     mov esi, .filename
     call os_fs_get_subfile_inode
     mov ebx, disk_buffer
@@ -63,15 +58,17 @@ kernel_main:
     mov edi, 0
     call os_fs_load_inode_block
 
+
     mov esi, disk_buffer
     call os_terminal_write_string
 
+    call disk_buffer
 
 
     jmp os_sleep
 
     
-.filename db "potato.txt"
+.filename db "test.bin", 0
 
 os_sleep:
     sti

@@ -93,6 +93,8 @@ os_ata_pio_irq_handler:
     mov dx, ATA_PRIMARY_DATA
 .loopy:
     in ax, dx
+
+
     mov [edi], ax
 
     add edi, 2
