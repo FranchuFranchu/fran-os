@@ -51,12 +51,18 @@ kernel_main:
 
 
     mov eax, 2
+    mov esi, .dirname
+    call os_fs_get_subfile_inode
+
     mov esi, .filename
     call os_fs_get_subfile_inode
+
+    call os_debug_print_eax
+
     mov ebx, disk_buffer
     call os_fs_load_inode
     mov eax, 0
-    mov edi, 0
+
     call os_fs_load_inode_block
 
 
@@ -67,7 +73,8 @@ kernel_main:
     jmp os_sleep
 
     
-.filename db "test.bin", 0
+.dirname db "testdir", 0
+.filename db "file.txt", 0
 
 os_sleep:
     sti

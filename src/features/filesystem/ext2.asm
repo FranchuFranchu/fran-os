@@ -491,9 +491,7 @@ os_fs_get_subfile_inode:
     push edx
     push esi
     push edi
-
-
-    mov eax, 2
+    
     mov ebx, disk_buffer
     call os_fs_load_inode
     mov ecx, [ebx+4] ; File size

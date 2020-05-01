@@ -35,7 +35,7 @@ disk-images/os_hda.img: isodir/boot/os.bin
 	grub-mkrescue -o disk-images/os_hda.img isodir
 
 os: disk-images/os_hda.img disk-images/os_hdb.img guest-filesystem/test.bin
-	chmod -R a=,+rwX *
+	
 
 bochs: os
 	bochs -f bochsrc
