@@ -1,4 +1,6 @@
 CC = /usr/local/cross/bin/i686-elf-gcc
+GUEST_FILES_ = $(shell find guest-filesystem)
+GUEST_FILES = $(shell echo $(GUEST_FILES_) | tr "\n" " ")
 
 src/boot.o: src/boot.asm
 	nasm -felf32 src/boot.asm -o src/boot.o
@@ -12,7 +14,7 @@ guest-filesystem/test.bin: guest-filesystem/test.asm
 disk-images/os_kernel.img: src/kernel.o src/boot.o
 	$(CC) -T linker.ld -o disk-images/os_kernel.img -ffreestanding -O2 -nostdlib src/boot.o src/kernel.o -lgcc
 
-disk-images/os_hdb.img: guest-filesystem/* guest-filesystem/*/*
+disk-images/os_hdb.img: $(GUEST_FILES)
 	rm disk-images/os_hdb.img
 	dd status=noxfer conv=notrunc if=/dev/zero of=disk-images/os_hdb.img bs=32256 count=16
 	mkfs.ext2 disk-images/os_hdb.img
