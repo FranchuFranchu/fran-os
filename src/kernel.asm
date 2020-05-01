@@ -45,6 +45,7 @@ kernel_main:
     ;call os_font_setup
     call os_ata_pio_setup
 
+    call os_sysenter_setup
 
     call os_fs_setup
 
@@ -62,8 +63,10 @@ kernel_main:
     mov esi, disk_buffer
     call os_terminal_write_string
 
+    
     call disk_buffer
 
+    sysenter
 
     jmp os_sleep
 

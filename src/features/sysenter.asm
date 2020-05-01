@@ -21,7 +21,6 @@ os_sysenter_setup:
     ret
 
 os_sysenter_entry_point:
-    mov dword [VGA_BUFFER], "a d "
+    mov dword [0xC00B8000], "a d "
     mov ecx, esp
-    mov edx, os_sleep   
-    sysexit
+    mov edx, os_sleep

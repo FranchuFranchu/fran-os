@@ -33,14 +33,6 @@ os_idt_info:
     .size dw os_idt_end - os_idt - 1
     .pointer dd os_idt
 
-wait_some_time:
-    mov ecx, 0xFFFFFFFF
-
-    .cont:
-        dec cx
-        cmp cx, 0
-        jne .cont
-    ret
 
 os_idt_setup:
     lidt [os_idt_info]
@@ -115,13 +107,6 @@ os_pic_allow_irq:
 
     in al, PIC1_DATA
     and al, bl
-
-    pusha
-    call os_string_convert_2hex
-    call os_terminal_putchar
-    shr eax, 8
-    call os_terminal_putchar
-    popa
 
     out PIC1_DATA, al
 

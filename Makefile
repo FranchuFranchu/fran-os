@@ -4,7 +4,6 @@ src/boot.o: src/boot.asm
 	nasm -felf32 src/boot.asm -o src/boot.o
 
 src/kernel.o: src/kernel.asm src/features/* src/features/storage/*
-	chmod -R 770 src
 	nasm -felf32 src/kernel.asm -o src/kernel.o -Isrc/
 
 guest-filesystem/test.bin: guest-filesystem/test.asm
@@ -20,11 +19,16 @@ disk-images/os_hdb.img: guest-filesystem/*
 	# Mount it 
 	rm -rf tmp-loop
 	mkdir tmp-loop
+
+	PREV_USER=$(USER)
+	su
 	mount -o loop disk-images/os_hdb.img tmp-loop
 
 	cp -r guest-filesystem/* tmp-loop
 
 	umount tmp-loop || exit
+	su $(PREV_USER)
+
 
 isodir/boot/os.bin: disk-images/os_kernel.img
 	mkdir -p isodir/boot/grub

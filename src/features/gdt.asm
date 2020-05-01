@@ -26,21 +26,21 @@ os_gdt_data:
   .limit_and_flags db 11001111b
   .base_24_31 db 0x0
 os_gdt_user_code:
-  .limit_0_15 dw 0xFFFF
+  .limit_0_15 dw 0
   .base_0_15 dw 0
  
   .base_16_23 db 0
   .access db 11111010b
-  .limit_and_flags db 11001111b
+  .limit_and_flags db 11001100b
   .base_24_31 db 0
 
 os_gdt_user_data:
-  .limit_0_15 dw 0xFFFF
+  .limit_0_15 dw 0
   .base_0_15 dw 0x0
  
   .base_16_23 db 0x0
-  .access db 11110010b
-  .limit_and_flags db 11001111b
+  .access db 10010010b
+  .limit_and_flags db 11001100b
   .base_24_31 db 0x0
 os_gdt_end:
  
