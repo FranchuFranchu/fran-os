@@ -63,10 +63,6 @@ kernel_main:
     mov esi, disk_buffer
     call os_terminal_write_string
 
-    
-    call disk_buffer
-
-    sysenter
 
     jmp os_sleep
 

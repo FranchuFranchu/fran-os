@@ -125,12 +125,6 @@ os_pic_allow_irq:
     in al, PIC2_DATA
     and al, bl
 
-    pusha
-    call os_string_convert_2hex
-    call os_terminal_putchar
-    shr eax, 8
-    call os_terminal_putchar
-    popa
     out PIC2_DATA, al
 
     jmp .end

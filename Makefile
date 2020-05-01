@@ -20,14 +20,11 @@ disk-images/os_hdb.img: guest-filesystem/*
 	rm -rf tmp-loop
 	mkdir tmp-loop
 
-	PREV_USER=$(USER)
-	su
-	mount -o loop disk-images/os_hdb.img tmp-loop
+	sudo mount -o loop disk-images/os_hdb.img tmp-loop
 
 	cp -r guest-filesystem/* tmp-loop
 
-	umount tmp-loop || exit
-	su $(PREV_USER)
+	sudo umount tmp-loop || exit
 
 
 isodir/boot/os.bin: disk-images/os_kernel.img
