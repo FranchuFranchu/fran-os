@@ -31,7 +31,7 @@ start:
 in_unreal:
     mov si, unreal_success
     call print_string
-    call os_ext2_setup
+    call kernel_ext2_setup
 
 
     mov eax, 0
@@ -46,10 +46,10 @@ in_unreal:
     mov si, filename
     mov bx, disk_buffer
 
-    call os_ext2_load_file_inode
+    call kernel_ext2_load_file_inode
 
     mov edi, 1
-    call os_ext2_load_inode_block
+    call kernel_ext2_load_inode_block
     jc .done
 
 

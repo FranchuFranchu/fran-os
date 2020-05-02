@@ -23,38 +23,38 @@ BITS 32
 %include "features/userspace.asm"
 %include "features/sysenter.asm"
 
-extern os_multiboot_info_pointer
+extern kernel_multiboot_info_pointer
 extern gdt_desc
 global kernel_main
 kernel_main:
-    lgdt [os_gdt_desc]
+    lgdt [kernel_gdt_desc]
 
-    call os_terminal_setup
-    call os_terminal_clear_screen
+    call kernel_terminal_setup
+    call kernel_terminal_clear_screen
 
     mov dh, VGA_COLOR_LIGHT_GREY
     mov dl, VGA_COLOR_BLACK
-    call os_terminal_set_color
+    call kernel_terminal_set_color
 
-    call os_idt_setup
-    call os_exception_handler_setup
-    call os_keyboard_setup
-    call os_paging_setup
-    ;call os_font_setup
-    call os_ata_pio_setup
-    call os_sysenter_setup
-    call os_fs_setup
-    call os_userspace_setup
+    call kernel_idt_setup
+    call kernel_exception_handler_setup
+    call kernel_keyboard_setup
+    call kernel_paging_setup
+    ;call kernel_font_setup
+    call kernel_ata_pio_setup
+    call kernel_sysenter_setup
+    call kernel_fs_setup
+    call kernel_userspace_setup
 
     mov eax, 2
     mov esi, .filename
-    call os_fs_get_subfile_inode
+    call kernel_fs_get_subfile_inode
 
     mov ebx, disk_buffer
-    call os_fs_load_inode
+    call kernel_fs_load_inode
     mov eax, 0
 
-    call os_fs_load_inode_block
+    call kernel_fs_load_inode_block
 
 
     mov ebx, disk_buffer
@@ -67,23 +67,23 @@ kernel_main:
     rep movsd
 
     mov ebx, 0
-    call os_switch_to_userspace
+    call kernel_switch_to_userspace
 
 
-    jmp os_sleep
+    jmp kernel_sleep
 
     
 .dirname db "testdir", 0
 .filename db "test.bin", 0
 
-os_sleep:
+kernel_sleep:
     sti
 .sleep:
     hlt
     jmp .sleep
 
 cpuid_not_supported:
-os_halt:
+kernel_halt:
     cli
 .halt:
     hlt
@@ -91,12 +91,12 @@ os_halt:
 
     ret
 
-os_void_idt:
+kernel_void_idt:
     dq 0
 
-os_restart:
+kernel_restart:
     ; Purposefully triple fault CPU
-    lidt [os_void_idt]
+    lidt [kernel_void_idt]
     ; Debug info for confused people trying to figure out why did it triple fault
     mov eax, 0x000A5C11
     mov ebx, "Rebo"
@@ -110,7 +110,7 @@ os_restart:
     int 0xFF ; anything will work
 
 
-os_shutdown:
+kernel_shutdown:
     ; This just works on QEMU and BOCHS, won't work on real computers
     mov dx, 0xB004
     mov ax, 0x0020
@@ -124,18 +124,18 @@ os_shutdown:
     shr ax, 8
     out dx, al
 
-    mov byte [os_terminal_color], 0x0C
-    mov byte [os_terminal_column], 0
-    mov byte [os_terminal_row], 1
+    mov byte [kernel_terminal_color], 0x0C
+    mov byte [kernel_terminal_column], 0
+    mov byte [kernel_terminal_row], 1
     mov esi, .errstr
-    call os_terminal_write_string
-    jmp os_halt
+    call kernel_terminal_write_string
+    jmp kernel_halt
 
     .errstr db "Unimplemented. Use the hardware power button.", 0
 
 
 ; Ignored interrupt
-os_unhandled_interrupt:
+kernel_unhandled_interrupt:
     push eax
     mov al,20h
     out 20h,al  ; acknowledge the interrupt to the PIC

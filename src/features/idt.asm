@@ -22,20 +22,20 @@ BITS 32
 %define ICW4_SFNM   0x10        ; Special fully nested (not) 
 
 
-os_idt:
+kernel_idt:
     times 0xFF dq 0   
 
 
-os_idt_end:
+kernel_idt_end:
 
 
-os_idt_info:
-    .size dw os_idt_end - os_idt - 1
-    .pointer dd os_idt
+kernel_idt_info:
+    .size dw kernel_idt_end - kernel_idt - 1
+    .pointer dd kernel_idt
 
 
-os_idt_setup:
-    lidt [os_idt_info]
+kernel_idt_setup:
+    lidt [kernel_idt_info]
     ; Initialize both PICs and remap 
     mov dx, PIC1_COMMAND
     mov bl, 0x20
@@ -87,7 +87,7 @@ pic_clear_mask:
     ret
 
 ; IN = EAX: IRQ number
-os_pic_allow_irq:
+kernel_pic_allow_irq:
     push eax
     push ebx
     push ecx
@@ -138,7 +138,7 @@ os_pic_allow_irq:
 
 
 ; IN = EAX: Function to be jumped to, EBX: Interrupt number
-os_define_interrupt:
+kernel_define_interrupt:
     cmp ebx, 0x30
     jge .noirq
     cmp ebx, 0x20
@@ -147,15 +147,15 @@ os_define_interrupt:
     push eax
     mov eax, ebx
     sub eax, 0x20
-    call os_pic_allow_irq
+    call kernel_pic_allow_irq
     pop eax
 
 .noirq:
-    mov word [os_idt+ebx*8],ax
-    mov word [os_idt+ebx*8+2],8h   
-    mov byte [os_idt+ebx*8+4],0
-    mov byte [os_idt+ebx*8+5],10001110b
+    mov word [kernel_idt+ebx*8],ax
+    mov word [kernel_idt+ebx*8+2],8h   
+    mov byte [kernel_idt+ebx*8+4],0
+    mov byte [kernel_idt+ebx*8+5],10001110b
     ror eax, 16
-    mov word [os_idt+ebx*8+6],ax
+    mov word [kernel_idt+ebx*8+6],ax
     rol eax, 16
     ret

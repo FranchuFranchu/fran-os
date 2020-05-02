@@ -14,27 +14,27 @@
     
     print_ch "a"
     mov eax, eax
-    call os_print_eax
+    call kernel_print_eax
 
     print_ch "b"
     mov eax, ebx
-    call os_print_eax
+    call kernel_print_eax
 
     print_ch "c"
     mov eax, ecx
-    call os_print_eax
+    call kernel_print_eax
 
     print_ch "d"
     mov eax, edx
-    call os_print_eax
+    call kernel_print_eax
 
     print_ch "e"
     mov eax, esi
-    call os_print_eax
+    call kernel_print_eax
 
     print_ch "f"
     mov eax, edi
-    call os_print_eax
+    call kernel_print_eax
 
 
     popa
@@ -64,7 +64,7 @@ read_sectors:
     pusha
     mov esi, eax
     mov al, cl
-    call os_lba_to_int13h
+    call kernel_lba_to_int13h
     int 13h
 
     push eax
@@ -94,7 +94,7 @@ read_sectors:
     and ebx, 0x0000FFFF
     ret
 
-os_ext2_setup:
+kernel_ext2_setup:
     pusha
     
     mov ax, 0
@@ -215,7 +215,7 @@ os_ext2_setup:
 
 ; IN =  EAX: Inode number
 ; OUT = EAX: Group number
-os_ext2_get_inode_group:
+kernel_ext2_get_inode_group:
     push edx
     push ebx
 
@@ -231,7 +231,7 @@ os_ext2_get_inode_group:
 
 ; IN =  EAX: Inode number
 ; OUT = EAX: Index inside block
-os_ext2_get_inode_index:
+kernel_ext2_get_inode_index:
     push edx
     push ebx
 
@@ -251,7 +251,7 @@ os_ext2_get_inode_index:
 
 ; IN =  EAX: Inode number
 ; OUT = EAX: Block number
-os_ext2_get_inode_block:
+kernel_ext2_get_inode_block:
     push edx
     push ebx
 
@@ -277,7 +277,7 @@ SECTOR_SIZE equ 512
 
 ; IN =  EAX: Block number. EDI: Sector offset (not usually needed)
 ; OUT = EAX: LBA address
-os_ext2_get_block_lba:
+kernel_ext2_get_block_lba:
     ; Sector = Block number * BLOCK_SIZE / SECTOR_SIZE - filesystem_start
     push edx
     push ebx
@@ -300,7 +300,7 @@ os_ext2_get_block_lba:
 
 ; IN =  EAX: Block group number, ES:BX: Buffer
 ; OUT = ES:BX contents and value changed to point to the start of the entry
-os_ext2_read_bgdt:
+kernel_ext2_read_bgdt:
     ; Push everything except BX
     push eax
     push ecx
@@ -317,11 +317,11 @@ os_ext2_read_bgdt:
     je .block2
     .block1: 
         mov eax, 4
-        call os_ext2_get_block_lba
+        call kernel_ext2_get_block_lba
         jmp .load_table
     .block2:
         mov eax, 2
-        call os_ext2_get_block_lba
+        call kernel_ext2_get_block_lba
         jmp .load_table
 
 .load_table:
@@ -357,23 +357,23 @@ os_ext2_read_bgdt:
 
 ; IN =  EAX: Group number, ES:BX: Buffer
 ; OUT = EAX: Block address of start of inode table
-os_ext2_get_inode_table_block:
+kernel_ext2_get_inode_table_block:
     push ebx
-    call os_ext2_read_bgdt
+    call kernel_ext2_read_bgdt
     mov eax, [ebx + 8]
     pop ebx
     ret
     
 ; IN =  EAX: Inode number, ES:BX: Buffer
 ; OUT = ES:BX points to the inode
-os_ext2_load_inode:
+kernel_ext2_load_inode:
     push eax
     push ecx
     push edx
     push edi
 
     push eax ; Inode number
-    call os_ext2_get_inode_index
+    call kernel_ext2_get_inode_index
  
 
     mov ecx, INODE_SIZE
@@ -396,17 +396,17 @@ os_ext2_load_inode:
     push edx ; Byte offset
 
 
-    call os_ext2_get_inode_group
+    call kernel_ext2_get_inode_group
 
 
-    call os_ext2_get_inode_table_block
+    call kernel_ext2_get_inode_table_block
     add eax, ecx
 
 
     mov bx, disk_buffer
     mov edi, 0
     clc
-    call os_ext2_load_block
+    call kernel_ext2_load_block
 
 
 
@@ -424,7 +424,7 @@ os_ext2_load_inode:
 ; Gets the location for the EAXth block that contains a file
 ; IN =  EAX: Block index, ES:BX: Buffer with the inode
 ; OUT = EAX: Block number
-os_ext2_get_file_block:
+kernel_ext2_get_file_block:
     push ebx
     push ecx
     push edx
@@ -478,13 +478,13 @@ os_ext2_get_file_block:
     mov eax, [bx + 88] ; Singly indirect block
     mov ecx, 10
     add eax, 8
-    call os_print_eax  
+    call kernel_print_eax  
     ;mov eax, 0x17800 / 1024+1
     mov bx, disk_buffer
-    call os_ext2_load_block
+    call kernel_ext2_load_block
     mov bx, disk_buffer
     mov eax, [bx]
-    call os_print_eax   
+    call kernel_print_eax   
 
 
     pop edx
@@ -496,7 +496,7 @@ os_ext2_get_file_block:
     add bx, dx
 
     mov eax, [bx]
-    call os_print_eax   
+    call kernel_print_eax   
 
     jmp .done
 
@@ -515,9 +515,9 @@ os_ext2_get_file_block:
 
 ; IN =  EAX: Block number
 ; OUT = disk_buffer filled with block
-os_ext2_load_block:
+kernel_ext2_load_block:
     
-    call os_ext2_get_block_lba
+    call kernel_ext2_get_block_lba
     mov bx, disk_buffer 
     mov cl, [BLOCK_SECTORS]
     call read_sectors
@@ -525,7 +525,7 @@ os_ext2_load_block:
 
 ; IN = EAX:  Parent directory inode number, ESI: Filename
 ; OUT = EAX: Subfile inode number
-os_ext2_get_subfile_inode:
+kernel_ext2_get_subfile_inode:
     push ebx
     push ecx
     push edx
@@ -534,14 +534,14 @@ os_ext2_get_subfile_inode:
 
 
     mov bx, disk_buffer
-    call os_ext2_load_inode
+    call kernel_ext2_load_inode
     mov ecx, [bx+4] ; File size
     mov eax, 0 ; Get data block index number 0 
 
 .load_blocks:
-    call os_ext2_get_file_block
+    call kernel_ext2_get_file_block
     mov edi, 0
-    call os_ext2_load_block
+    call kernel_ext2_load_block
 
     mov ecx, 0x100
     push eax
@@ -618,34 +618,34 @@ os_ext2_get_subfile_inode:
 
 ; IN = ESI: filename
 ; OUT = ES:BX points to inode
-os_ext2_load_file_inode:
+kernel_ext2_load_file_inode:
     push eax
     ; Fetch the root directory, and find the sub-file's inode.
     ; It's in inode 2
     mov eax, 2 
     mov bx, disk_buffer
-    call os_ext2_get_subfile_inode
+    call kernel_ext2_get_subfile_inode
 
 
     ; Load the inode
     mov bx, disk_buffer
-    call os_ext2_load_inode
+    call kernel_ext2_load_inode
     clc
     pop eax
     ret
 
 ; IN = ES:BX: points to the inode, EAX: Block number, EDI: Offset
 ; OUT = ES:BX points to the block, carry set if file size exceeded
-os_ext2_load_inode_block:
+kernel_ext2_load_inode_block:
     push edi
-    call os_ext2_get_file_block
+    call kernel_ext2_get_file_block
     jc .fail
     mov bx, disk_buffer
     pop edi
-    call os_print_eax
-    call os_ext2_load_block
+    call kernel_print_eax
+    call kernel_ext2_load_block
     mov eax, [disk_buffer]
-    call os_print_eax
+    call kernel_print_eax
 
     push ax
     mov ax, 0x0e0d

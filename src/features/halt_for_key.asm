@@ -1,6 +1,6 @@
-os_halt_for_key_keypressed db 0
+kernel_halt_for_key_keypressed db 0
 
-os_halt_for_key:
+kernel_halt_for_key:
     ; Only accept a single key input, then un-halt. Used in exceptions
     cli
 
@@ -11,9 +11,9 @@ os_halt_for_key:
     and al, 0xFD
     out PIC2_DATA, al
 
-    mov eax, os_halt_for_key_irq_handler
+    mov eax, kernel_halt_for_key_irq_handler
     mov ebx, 21h
-    call os_define_interrupt
+    call kernel_define_interrupt
 
     sti
 .halt:
@@ -24,9 +24,9 @@ os_halt_for_key:
 .done:
     call pic_clear_mask
 
-    mov eax, os_keyboard_irq_handler
+    mov eax, kernel_keyboard_irq_handler
     mov ebx, 21h
-    call os_define_interrupt
+    call kernel_define_interrupt
     
     in al, 0x60
     and eax, 0x7F
@@ -37,8 +37,8 @@ os_halt_for_key:
 
     ret
 
-os_halt_for_key_irq_handler:
-    mov byte [os_halt_for_key_keypressed], 0xFF
+kernel_halt_for_key_irq_handler:
+    mov byte [kernel_halt_for_key_keypressed], 0xFF
     
     mov al,20h
     out 20h,al  ;; acknowledge the interrupt to the PIC

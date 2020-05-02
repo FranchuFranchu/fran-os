@@ -1,0 +1,15 @@
+no_operation:
+  doc: Does nothing
+
+read_file:
+  in:
+    esi: File descriptor
+    eax: Bytes to read
+    edi: Buffer
+  out:
+    edi: Filled buffer
+
+debug:
+  doc: Dumps the EAX register
+  in:
+    eax: Register to dump

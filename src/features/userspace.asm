@@ -1,5 +1,5 @@
 ; IN = EBX: Userspace code
-os_switch_to_userspace:
+kernel_switch_to_userspace:
     
     ; We will fake the return stack for iret to make the cpu
     ; believe that a userspace process triggered an interrupt
@@ -18,7 +18,7 @@ os_switch_to_userspace:
     push ebx ; may need to remove the _ for this to work right 
     iret
 
-os_task_state_segment:
+kernel_task_state_segment:
    .prev_tss: dd 0   ; The previous TSS - if we used hardware task switching this would form a linked list.
    .esp0: dd 0       ; The stack pointer to load when we change to kernel mode.
    .ss0: dd 0        ; The stack segment to load when we change to kernel mode.
@@ -47,48 +47,48 @@ os_task_state_segment:
    .trap: dw 0
    .iomap_base: dw 0
 
-os_task_state_segment_end:
+kernel_task_state_segment_end:
 
-os_userspace_setup:
+kernel_userspace_setup:
     ; Setup the TSS
 
     mov eax, esp
-    mov [os_task_state_segment.esp0], eax
+    mov [kernel_task_state_segment.esp0], eax
     
     xor eax, eax
     mov ax, ss
-    mov [os_task_state_segment.ss0], eax
+    mov [kernel_task_state_segment.ss0], eax
     
 
-    mov eax, os_task_state_segment
+    mov eax, kernel_task_state_segment
     ; Set base in the GDT
 
     mov ebx, eax
-    mov [os_gdt_task_state_segment.base_0_15], bx
+    mov [kernel_gdt_task_state_segment.base_0_15], bx
 
     mov ebx, eax
     shr ebx, 16
-    mov [os_gdt_task_state_segment.base_16_23], bl
+    mov [kernel_gdt_task_state_segment.base_16_23], bl
 
     mov ebx, eax
     shr ebx, 24
-    mov [os_gdt_task_state_segment.base_24_31], bl
+    mov [kernel_gdt_task_state_segment.base_24_31], bl
 
     ; Set limit
     ; Note that the limit is a 20-bit value
 
-    mov eax, os_task_state_segment_end - os_task_state_segment
+    mov eax, kernel_task_state_segment_end - kernel_task_state_segment
 
     mov ebx, eax
-    mov [os_gdt_task_state_segment.limit_0_15], bx
+    mov [kernel_gdt_task_state_segment.limit_0_15], bx
 
     mov ebx, eax
     shr ebx, 16
     and bl, 0x0F
-    or [os_gdt_task_state_segment.limit_and_flags], bl
+    or [kernel_gdt_task_state_segment.limit_and_flags], bl
 
     ; Set the "present" flag
-    or byte [os_gdt_task_state_segment.access], 0x80
+    or byte [kernel_gdt_task_state_segment.access], 0x80
 
     mov ax, 0x2B
     ltr ax

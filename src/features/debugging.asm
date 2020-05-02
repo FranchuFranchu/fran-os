@@ -1,16 +1,16 @@
 ; IN = ESI: Start location, ECX: Count in bytes
 
-os_debug_dump_memory:
+kernel_debug_dump_memory:
     pusha
     mov eax, 0
 .dump:
     mov eax, 0
     mov al, [esi]
 
-    call os_string_convert_2hex
-    call os_terminal_putchar
+    call kernel_string_convert_2hex
+    call kernel_terminal_putchar
     shr ax, 8
-    call os_terminal_putchar
+    call kernel_terminal_putchar
 
     inc esi
     dec ecx
@@ -19,45 +19,45 @@ os_debug_dump_memory:
     popa
     ret
 
-os_debug_print_eax:
+kernel_debug_print_eax:
     push eax
     push ebx
     push eax
     ror eax, 16
-    call os_string_convert_4hex
-    call os_terminal_putchar
+    call kernel_string_convert_4hex
+    call kernel_terminal_putchar
     shr eax, 8
-    call os_terminal_putchar
+    call kernel_terminal_putchar
     shr eax, 8
-    call os_terminal_putchar
+    call kernel_terminal_putchar
     shr eax, 8
-    call os_terminal_putchar
+    call kernel_terminal_putchar
     shr eax, 8
 
 
     pop eax
-    call os_string_convert_4hex
-    call os_terminal_putchar
+    call kernel_string_convert_4hex
+    call kernel_terminal_putchar
     shr eax, 8
-    call os_terminal_putchar
+    call kernel_terminal_putchar
     shr eax, 8
-    call os_terminal_putchar
+    call kernel_terminal_putchar
     shr eax, 8
-    call os_terminal_putchar
+    call kernel_terminal_putchar
     shr eax, 8
     pop ebx
     mov al, 0xa
-    call os_terminal_putchar
+    call kernel_terminal_putchar
     pop eax
     ret
 
 ; Carry, Parity, Auxiliary, Zero, Sign, Trap, Interrupt, Direction, Overflow
-os_debug_print_flags:
+kernel_debug_print_flags:
     pusha
     pushfd
     pop edx
     mov eax, edx
-    call os_debug_print_eax
+    call kernel_debug_print_eax
     mov ebx, 0
     mov ecx, 0x80
 .loopy:
@@ -90,7 +90,7 @@ os_debug_print_flags:
 
 
 .restore:
-    call os_terminal_putchar
+    call kernel_terminal_putchar
     mov edx, esi ; restore register
 
 .dontprint:

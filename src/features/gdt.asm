@@ -1,6 +1,6 @@
-os_gdt:
+kernel_gdt:
  
-os_gdt_null:
+kernel_gdt_null:
   dw 0
   dw 0
   db 0
@@ -8,7 +8,7 @@ os_gdt_null:
   db 0
   db 0
  
-os_gdt_code:
+kernel_gdt_code:
   .limit_0_15 dw 0xFFFF
   .base_0_15 dw 0
  
@@ -17,7 +17,7 @@ os_gdt_code:
   .limit_and_flags db 11001111b
   .base_24_31 db 0
 
-os_gdt_data:
+kernel_gdt_data:
   .limit_0_15 dw 0xFFFF
   .base_0_15 dw 0x0
  
@@ -25,7 +25,7 @@ os_gdt_data:
   .access db 10010010b
   .limit_and_flags db 11001111b
   .base_24_31 db 0
-os_gdt_user_code:
+kernel_gdt_user_code:
   .limit_0_15 dw 0xFFFF
   .base_0_15 dw 0
  
@@ -34,7 +34,7 @@ os_gdt_user_code:
   .limit_and_flags db 11001111b
   .base_24_31 db 0
 
-os_gdt_user_data:
+kernel_gdt_user_data:
   .limit_0_15 dw 0xFFFF
   .base_0_15 dw 0x0
  
@@ -43,8 +43,8 @@ os_gdt_user_data:
   .limit_and_flags db 11001111b
   .base_24_31 db 0x0
 
-os_gdt_task_state_segment:
-  ; We don't know the values of these yet; os_userspace_setup will set them
+kernel_gdt_task_state_segment:
+  ; We don't know the values of these yet; kernel_userspace_setup will set them
   .limit_0_15 dw 0
   .base_0_15 dw 0x0
  
@@ -54,8 +54,8 @@ os_gdt_task_state_segment:
   .limit_and_flags db 00000000b
   .base_24_31 db 0x0
 
-os_gdt_end:
+kernel_gdt_end:
  
-os_gdt_desc:
-  .size: dw os_gdt_end - os_gdt - 1
-  .offset: dd os_gdt
+kernel_gdt_desc:
+  .size: dw kernel_gdt_end - kernel_gdt - 1
+  .offset: dd kernel_gdt

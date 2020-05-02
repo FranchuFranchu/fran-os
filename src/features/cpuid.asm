@@ -1,6 +1,6 @@
 ; WIP
 ; OUT: EAX != 0  if cpuid available
-os_cpuid_available:
+kernel_cpuid_available:
     pushfd
     pushfd                               ;Store EFLAGS
     xor dword [esp],0x00200000           ;Invert the ID bit in stored EFLAGS
@@ -14,10 +14,10 @@ os_cpuid_available:
 
 ; IN: EAX: passed to cpuid
 ; OUT: EAX, EBX, ECX, EDX: CPUID output
-os_cpuid:
+kernel_cpuid:
     ret
 
-os_cpuid_print_vendor:
+kernel_cpuid_print_vendor:
     mov eax, 80000002h
     mov esi, 0
     mov edi, 0
@@ -30,13 +30,13 @@ os_cpuid_print_vendor:
 
     ret
 .print_eax:
-    call os_terminal_putchar
+    call kernel_terminal_putchar
     ror eax, 8
-    call os_terminal_putchar
+    call kernel_terminal_putchar
     ror eax, 8
-    call os_terminal_putchar
+    call kernel_terminal_putchar
     ror eax, 8
-    call os_terminal_putchar
+    call kernel_terminal_putchar
     ror eax, 8
     ret
 

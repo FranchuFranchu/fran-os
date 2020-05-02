@@ -1,4 +1,4 @@
-os_font_unknown:
+kernel_font_unknown:
 db 00011000b
 db 00111100b
 db 01111110b
@@ -23,8 +23,8 @@ db 00000000b
 db 00000000b
 
 
-os_font_setup:
-    mov esi, os_font_unknown
+kernel_font_setup:
+    mov esi, kernel_font_unknown
     mov ebx, 16
     ;clear even/odd mode
     mov         dx, 03ceh

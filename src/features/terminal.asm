@@ -21,8 +21,8 @@ VGA_COLOR_LIGHT_MAGENTA equ 13
 VGA_COLOR_LIGHT_BROWN equ 14
 VGA_COLOR_WHITE equ 15
 
-; IN = dx: Output of os_terminal_getidx
-os_vga_update_cursor:
+; IN = dx: Output of kernel_terminal_getidx
+kernel_vga_update_cursor:
     pusha
 
     mov bx, dx
@@ -47,7 +47,7 @@ os_vga_update_cursor:
     popa
     ret
 
-os_terminal_clear_screen:
+kernel_terminal_clear_screen:
     mov ecx, VGA_WIDTH * VGA_HEIGHT * 2
 
 
@@ -64,7 +64,7 @@ os_terminal_clear_screen:
 ; IN = dl: y, dh: x
 ; OUT = edx: Index with offset VGA_BUFFER at VGA buffer
 ; Other registers preserved
-os_terminal_getidx:
+kernel_terminal_getidx:
     push eax; preserve registers
     push ebx
     ;xchg dl, dh
@@ -84,23 +84,23 @@ os_terminal_getidx:
 
 ; IN = dl: bg color, dh: fg color
 ; OUT = none
-os_terminal_set_color:
+kernel_terminal_set_color:
     shl dl, 4
 
     or dl, dh
-    mov [os_terminal_color], dl
+    mov [kernel_terminal_color], dl
 
 
     ret
 
 ; IN = dl: y, dh: x, al: ASCII char
 ; OUT = none
-os_terminal_putentryat:
+kernel_terminal_putentryat:
     pusha
-    call os_terminal_getidx
+    call kernel_terminal_getidx
     mov ebx, edx
 
-    mov dl, [os_terminal_color]
+    mov dl, [kernel_terminal_color]
     mov byte [VGA_BUFFER + ebx], al
     mov byte [VGA_BUFFER + 1 + ebx], dl
 
@@ -109,16 +109,16 @@ os_terminal_putentryat:
     ret
 
 ; Puts a 0x00 if the character at dx is a space. Used for cursor
-; IN = dx: Output of os_terminal_getidx
+; IN = dx: Output of kernel_terminal_getidx
 ; OUT = none
-os_terminal_put_none_if_space: 
+kernel_terminal_put_none_if_space: 
     pusha
     mov ebx, edx
 
     cmp byte [VGA_BUFFER + ebx], 0x20
     jne .notspace
 
-    mov dl, [os_terminal_color]    
+    mov dl, [kernel_terminal_color]    
     mov byte [VGA_BUFFER + ebx], 0x0
     mov byte [VGA_BUFFER + 1 + ebx], dl
 
@@ -128,16 +128,16 @@ os_terminal_put_none_if_space:
 
 
 ; IN = al: ASCII char
-os_terminal_putchar:
+kernel_terminal_putchar:
     pusha
-    mov dx, [os_terminal_cursor_pos] ; This loads os_terminal_column at DH, and os_terminal_row at DL
-    mov dh, [os_terminal_column]
-    mov dl, [os_terminal_row]
+    mov dx, [kernel_terminal_cursor_pos] ; This loads kernel_terminal_column at DH, and kernel_terminal_row at DL
+    mov dh, [kernel_terminal_column]
+    mov dl, [kernel_terminal_row]
 
     cmp al, 0xA
     je .nextline
 
-    call os_terminal_putentryat
+    call kernel_terminal_putentryat
     
     inc dh
     cmp dh, VGA_WIDTH
@@ -158,12 +158,12 @@ os_terminal_putchar:
 .cursor_moved:
     ; Store new cursor position
 
-    mov [os_terminal_column], dh
-    mov [os_terminal_row], dl
+    mov [kernel_terminal_column], dh
+    mov [kernel_terminal_row], dl
 
-    call os_terminal_getidx
-    call os_terminal_put_none_if_space
-    call os_vga_update_cursor
+    call kernel_terminal_getidx
+    call kernel_terminal_put_none_if_space
+    call kernel_vga_update_cursor
 
     popa
 
@@ -171,12 +171,12 @@ os_terminal_putchar:
 
 ; IN = ECX: length of string, ESI: string location
 ; OUT = none
-os_terminal_write:
+kernel_terminal_write:
     pusha
 .loopy:
 
     mov al, [esi]
-    call os_terminal_putchar
+    call kernel_terminal_putchar
 
     dec ecx
     cmp ecx, 0
@@ -192,7 +192,7 @@ os_terminal_write:
 
 ; IN = ESI: zero delimited string location
 ; OUT = ECX: length of string
-os_terminal_strlen:
+kernel_terminal_strlen:
     push eax
     push esi
     mov ecx, 0
@@ -214,20 +214,20 @@ os_terminal_strlen:
 
 ; IN = ESI: string location
 ; OUT = none
-os_terminal_write_string:
+kernel_terminal_write_string:
     pusha
-    call os_terminal_strlen
-    call os_terminal_write
+    call kernel_terminal_strlen
+    call kernel_terminal_write
     popa
     ret
 
-os_terminal_setup:
+kernel_terminal_setup:
     ret
 
 section .data
-os_terminal_color db 0
+kernel_terminal_color db 0
 
-os_terminal_cursor_pos:
-os_terminal_column db 0
-os_terminal_row db 0
+kernel_terminal_cursor_pos:
+kernel_terminal_column db 0
+kernel_terminal_row db 0
 section .text

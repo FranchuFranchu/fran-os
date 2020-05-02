@@ -12,8 +12,8 @@ KEYBOARD_TOGGLE_CAPSLOCK equ  1b
 
 %include "features/scancodes.inc"
 
-os_keyboard_event_queue:
-    dd os_keyboard_send_next_byte
+kernel_keyboard_event_queue:
+    dd kernel_keyboard_send_next_byte
     db 10h
     db 10h
     db 0 ; Align
@@ -21,43 +21,43 @@ os_keyboard_event_queue:
 
     times 10h dd 0
 
-os_keyboard_driver_state db 0
+kernel_keyboard_driver_state db 0
 ; 0 = must send scancode set command
 ; 1 = must send scancode number (3)
 ; 0xF = received bytes are now scancodes
 
-os_controlkey_states:
+kernel_controlkey_states:
     db 0 ; -       , RShift,   
     db 0 ; LControl, LShift, LAlt
-os_togglekey_states:
+kernel_togglekey_states:
     db 0 ; Caps Lock, Num lock, Scroll lock
 
-os_keyboard_setup:
+kernel_keyboard_setup:
 
-    mov eax, os_keyboard_irq_handler
+    mov eax, kernel_keyboard_irq_handler
     mov ebx, 21h
-    call os_define_interrupt
+    call kernel_define_interrupt
 
-    ;mov dword [os_eventqueue_on_next_tick_vectors], os_keyboard_phase_1
+    ;mov dword [kernel_eventqueue_on_next_tick_vectors], kernel_keyboard_phase_1
     ; Disabled due to bug
 
     ret
-os_keyboard_send_next_byte:
-    call os_terminal_putchar
+kernel_keyboard_send_next_byte:
+    call kernel_terminal_putchar
     out 60h, al
     ret
 
-os_keyboard_phase_1:
-    mov byte [os_keyboard_driver_state], 0x1
+kernel_keyboard_phase_1:
+    mov byte [kernel_keyboard_driver_state], 0x1
 
     mov al, 0xF0
     out 60h, al
 
-    mov dword [os_eventqueue_on_next_tick_vectors], os_keyboard_phase_2
+    mov dword [kernel_eventqueue_on_next_tick_vectors], kernel_keyboard_phase_2
 
     ret
 
-os_keyboard_phase_2:
+kernel_keyboard_phase_2:
     in al,60h   ;; read information from the keyboard
     cmp al, PS2_KEYBOARD_RESEND
     je .number_resend
@@ -74,16 +74,16 @@ os_keyboard_phase_2:
 
     .number_ack:
         mov al, "b"
-        call os_terminal_putchar
+        call kernel_terminal_putchar
         mov al, PS2_KEYBOARD_PREFERRED_SCANCODE_SET
         out 0x60, al
 
-        mov dword [os_eventqueue_on_next_tick_vectors], 0
+        mov dword [kernel_eventqueue_on_next_tick_vectors], 0
 
-        mov byte [os_keyboard_driver_state], 0xF
+        mov byte [kernel_keyboard_driver_state], 0xF
         ret
 
-os_keyboard_irq_handler: 
+kernel_keyboard_irq_handler: 
     pusha
     in al, 0x60
 
@@ -113,7 +113,7 @@ os_keyboard_irq_handler:
 
     mov al, [scancode_to_lowercase+ebx]
     
-    call os_keyboard_keydown ; Call the high-level handler
+    call kernel_keyboard_keydown ; Call the high-level handler
 
     jmp .done
 .keyup:
@@ -122,7 +122,7 @@ os_keyboard_irq_handler:
 
     mov al, [scancode_to_lowercase+ebx]
     
-    call os_keyboard_keyup ; Call the high-level handler
+    call kernel_keyboard_keyup ; Call the high-level handler
 
     jmp .done
 
@@ -133,10 +133,10 @@ os_keyboard_irq_handler:
     popa    ;; restore state
     iret
 
-os_keyboard_update_led:
+kernel_keyboard_update_led:
     ret
 
-os_keyboard_keydown:
+kernel_keyboard_keydown:
     cmp al, 0
     je .unknownkey
 
@@ -166,11 +166,11 @@ os_keyboard_keydown:
 
 .asciikey:
 
-    mov dx, [os_controlkey_states]
+    mov dx, [kernel_controlkey_states]
     and dx, KEYBOARD_FLAG_LSHIFT
     shr dx, 1
 
-    mov cx, [os_togglekey_states]
+    mov cx, [kernel_togglekey_states]
     and cx, KEYBOARD_TOGGLE_CAPSLOCK
 
     xor cx, dx ; capitalize = XOR(shift, capslock)
@@ -187,13 +187,13 @@ os_keyboard_keydown:
 
     .lowercase:
 
-    call os_terminal_putchar
+    call kernel_terminal_putchar
 
 
     jmp .done
 
 .controlkey:
-    mov dx, [os_controlkey_states]
+    mov dx, [kernel_controlkey_states]
     and al, 0xF
     mov bx, 1000000000000000b ; OR Mask
     .shift_until_done:
@@ -204,11 +204,11 @@ os_keyboard_keydown:
         jne .shift_until_done
 
     or dx, bx
-    mov [os_controlkey_states], dx
+    mov [kernel_controlkey_states], dx
     jmp .done
 .togglekey:
     
-    mov dx, [os_togglekey_states]
+    mov dx, [kernel_togglekey_states]
     and al, 0xF
     mov bx, 1000000000000000b ; OR Mask
     .shift_until_done_toggle:
@@ -225,17 +225,17 @@ os_keyboard_keydown:
     jnz .set_to_cleared
 
 .cleared_to_set:
-    mov dx, [os_togglekey_states]
+    mov dx, [kernel_togglekey_states]
     or dx, bx
     jmp .save
 .set_to_cleared:
-    mov dx, [os_togglekey_states]
+    mov dx, [kernel_togglekey_states]
     not bx
     and dx, bx
 .save:
-    mov [os_togglekey_states], dx
+    mov [kernel_togglekey_states], dx
 
-    call os_keyboard_update_led
+    call kernel_keyboard_update_led
 
     jmp .done
 
@@ -247,7 +247,7 @@ os_keyboard_keydown:
 
 
 
-os_keyboard_keyup:
+kernel_keyboard_keyup:
     cmp al, 0
     je .unknownkey
 
@@ -260,10 +260,10 @@ os_keyboard_keyup:
     pusha
     %ifdef c
 
-    call os_string_convert_2hex
-    call os_terminal_putchar
+    call kernel_string_convert_2hex
+    call kernel_terminal_putchar
     shr eax, 8
-    call os_terminal_putchar
+    call kernel_terminal_putchar
 
     %endif
     popa
@@ -291,7 +291,7 @@ os_keyboard_keyup:
     jmp .done
 
 .controlkey:
-    mov dx, [os_controlkey_states]
+    mov dx, [kernel_controlkey_states]
     and al, 0xF
     mov bx, 0111111111111111b ; AND Mask
     .shift_until_done:
@@ -302,7 +302,7 @@ os_keyboard_keyup:
         jne .shift_until_done
 
     and dx, bx
-    mov [os_controlkey_states], dx
+    mov [kernel_controlkey_states], dx
     jmp .done
 .togglekey:
     jmp .done

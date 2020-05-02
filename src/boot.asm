@@ -118,16 +118,16 @@ gdt_desc:
 
 
 ; IN = EAX: Page table address (4KiB aligned), EBX: Future location of PDT, AL: Flags
-%define os_paging_make_pde mov [ebx], eax
+%define kernel_paging_make_pde mov [ebx], eax
 
 ; IN = EAX: Physical address to map to (4KiB aligned) address, EBX: Future location of PDT, AL: Flags
-%define os_paging_make_pte mov [ebx], eax
+%define kernel_paging_make_pte mov [ebx], eax
 
 ; OUT = AL: Common page flags
-%define os_paging_set_default_page_flags mov al, 111b
+%define kernel_paging_set_default_page_flags mov al, 111b
 
-global os_multiboot_info_pointer
-os_multiboot_info_pointer dd 0
+global kernel_multiboot_info_pointer
+kernel_multiboot_info_pointer dd 0
 
 global _start:function (_start.end - _start)
 _start:
@@ -154,11 +154,11 @@ _start:
     mov dword [0xB8000], "s 1 "
     
     add ebx, KERNEL_VIRTUAL_BASE
-    mov [os_multiboot_info_pointer - KERNEL_VIRTUAL_BASE], ebx
+    mov [kernel_multiboot_info_pointer - KERNEL_VIRTUAL_BASE], ebx
     
     mov esp, stack_top-KERNEL_VIRTUAL_BASE
     cli
-    .os_gdt_setup:
+    .kernel_gdt_setup:
         lgdt [gdt_desc-KERNEL_VIRTUAL_BASE]  ;load GDT
     mov ax, 0x10
     mov ds, ax

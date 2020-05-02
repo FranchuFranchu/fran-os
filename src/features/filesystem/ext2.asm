@@ -27,12 +27,12 @@ read_sectors:
 .loopy:
     mov eax, ecx
     mov ecx, 1
-    call os_ata_pio_read
+    call kernel_ata_pio_read
     mov ecx, eax
-    jc os_exception_fault
+    jc kernel_exception_fault
 
 .busy:
-    cmp dword [os_ata_pio_pointer_to_buffer], 0 ; Driver busy?
+    cmp dword [kernel_ata_pio_pointer_to_buffer], 0 ; Driver busy?
     jne .busy
 
 
@@ -48,7 +48,7 @@ read_sectors:
     popa
     ret
 
-os_fs_setup:
+kernel_fs_setup:
     pusha
     
     mov eax, 1
@@ -148,7 +148,7 @@ os_fs_setup:
 
     
     mov esi, .yessuperblock_msg
-    call os_terminal_write_string
+    call kernel_terminal_write_string
 
 
     popa
@@ -158,14 +158,14 @@ os_fs_setup:
 
 .error_wrongfs:
     mov esi, .nosuperblock_msg
-    call os_terminal_write_string
+    call kernel_terminal_write_string
 
-    jmp os_halt
+    jmp kernel_halt
 .error_unmatching_groupcount:
     mov esi, .unmatching_groupcount_msg
-    call os_terminal_write_string
+    call kernel_terminal_write_string
 
-    jmp os_halt
+    jmp kernel_halt
 
 .nosuperblock_msg db "Error: Ext2 Superblock not found. Make sure you have an unpartitioned ext2 hard disk mounted in hdb.",  0xa, 0
 .yessuperblock_msg db "Ext2: Superblock loaded", 0xa, 0
@@ -174,7 +174,7 @@ os_fs_setup:
 
 ; IN =  EAX: Inode number
 ; OUT = EAX: Group number
-os_fs_get_inode_group:
+kernel_fs_get_inode_group:
     push edx
     push ebx
 
@@ -190,7 +190,7 @@ os_fs_get_inode_group:
 
 ; IN =  EAX: Inode number
 ; OUT = EAX: Index inside block
-os_fs_get_inode_index:
+kernel_fs_get_inode_index:
     push edx
     push ebx
 
@@ -211,7 +211,7 @@ os_fs_get_inode_index:
 
 ; IN =  EAX: Inode number
 ; OUT = EAX: Block number
-os_fs_get_inode_block:
+kernel_fs_get_inode_block:
     push edx
     push ebx
 
@@ -237,7 +237,7 @@ SECTOR_SIZE equ 512
 
 ; IN =  EAX: Block number. EDI: Sector offset (not usually needed)
 ; OUT = EAX: LBA address
-os_fs_get_block_lba:
+kernel_fs_get_block_lba:
     ; Sector = Block number * BLOCK_SIZE / SECTOR_SIZE - filesystem_start
     push edx
     push ebx
@@ -260,7 +260,7 @@ os_fs_get_block_lba:
 
 ; IN =  EAX: Block group number, EBX: Buffer
 ; OUT = EBX contents and value changed to point to the start of the entry
-os_fs_read_bgdt:
+kernel_fs_read_bgdt:
     ; Push everything except BX
     push eax
     push ecx
@@ -277,11 +277,11 @@ os_fs_read_bgdt:
     je .block2
     .block1: 
         mov eax, 4
-        call os_fs_get_block_lba
+        call kernel_fs_get_block_lba
         jmp .load_table
     .block2:
         mov eax, 2
-        call os_fs_get_block_lba
+        call kernel_fs_get_block_lba
         jmp .load_table
 
 .load_table:
@@ -317,23 +317,23 @@ os_fs_read_bgdt:
 
 ; IN =  EAX: Group number, EBX: Buffer
 ; OUT = EAX: Block address of start of inode table
-os_fs_get_inode_table_block:
+kernel_fs_get_inode_table_block:
     push ebx
-    call os_fs_read_bgdt
+    call kernel_fs_read_bgdt
     mov eax, [ebx + 8]
     pop ebx
     ret
     
 ; IN =  EAX: Inode number, EBX: Buffer
 ; OUT = EBX points to the inode
-os_fs_load_inode:
+kernel_fs_load_inode:
     push eax
     push ecx
     push edx
     push edi
 
     push eax ; Inode number
-    call os_fs_get_inode_index
+    call kernel_fs_get_inode_index
 
     mov ecx, INODE_SIZE
     mul ecx
@@ -355,8 +355,8 @@ os_fs_load_inode:
     push edx ; Byte offset
 
 
-    call os_fs_get_inode_group
-    call os_fs_get_inode_table_block
+    call kernel_fs_get_inode_group
+    call kernel_fs_get_inode_table_block
 
     add eax, ecx
 
@@ -364,7 +364,7 @@ os_fs_load_inode:
     
     mov ebx, disk_buffer
     mov edi, 0
-    call os_fs_load_block
+    call kernel_fs_load_block
     mov ebx, disk_buffer
 
 
@@ -388,7 +388,7 @@ os_fs_load_inode:
 ; Gets the location for the EAXth block that contains a file
 ; IN =  EAX: Block index, EBX: Buffer with the inode
 ; OUT = EAX: Block number
-os_fs_get_file_block:
+kernel_fs_get_file_block:
     push ebx
     push ecx
     push edx
@@ -421,7 +421,7 @@ os_fs_get_file_block:
     cmp edx, eax
     jl .indirect1_inode
 
-    jmp os_halt
+    jmp kernel_halt
 
 
 .direct_inode:
@@ -439,7 +439,7 @@ os_fs_get_file_block:
     mov edi, 0
     add eax, 1
     ;mov eax, 0x17800 / 1024+1
-    call os_fs_load_block
+    call kernel_fs_load_block
     mov ebx, disk_buffer
 
     mov eax, [ebx]
@@ -470,11 +470,11 @@ os_fs_get_file_block:
 
 ; IN =  EAX: Block number
 ; OUT = disk_buffer filled with block
-os_fs_load_block:
+kernel_fs_load_block:
         
     pusha
 
-    call os_fs_get_block_lba
+    call kernel_fs_get_block_lba
     mov ebx, disk_buffer 
     mov ecx, 0
     mov cl, [BLOCK_SECTORS]
@@ -485,7 +485,7 @@ os_fs_load_block:
 
 ; IN = EAX:  Parent directory inode number, ESI: Filename
 ; OUT = EAX: Subfile inode number
-os_fs_get_subfile_inode:
+kernel_fs_get_subfile_inode:
     push ebx
     push ecx
     push edx
@@ -493,14 +493,14 @@ os_fs_get_subfile_inode:
     push edi
     
     mov ebx, disk_buffer
-    call os_fs_load_inode
+    call kernel_fs_load_inode
     mov ecx, [ebx+4] ; File size
     mov eax, 0 ; Get data block index number 0 
 
 .load_blocks:
-    call os_fs_get_file_block
+    call kernel_fs_get_file_block
     mov edi, 0
-    call os_fs_load_block
+    call kernel_fs_load_block
     mov ebx, disk_buffer
 
 
@@ -578,34 +578,34 @@ os_fs_get_subfile_inode:
 
 ; IN = ESI: filename
 ; OUT = EBX points to inode
-os_fs_load_file_inode:
+kernel_fs_load_file_inode:
     push eax
     ; Fetch the root directory, and find the sub-file's inode.
     ; It's in inode 2
     mov eax, 2 
     mov ebx, disk_buffer
-    call os_fs_get_subfile_inode
+    call kernel_fs_get_subfile_inode
 
 
     ; Load the inode
     mov ebx, disk_buffer
-    call os_fs_load_inode
+    call kernel_fs_load_inode
     clc
     pop eax
     ret
 
 ; IN = EBX: points to the inode, EAX: Block number, EDI: Offset
 ; OUT = EBX points to the block, carry set if file size exceeded
-os_fs_load_inode_block:
+kernel_fs_load_inode_block:
     push edi
 
-    call os_fs_get_file_block
+    call kernel_fs_get_file_block
     jc .fail
 
     mov ebx, disk_buffer
     pop edi
 
-    call os_fs_load_block
+    call kernel_fs_load_block
     mov ebx, disk_buffer
 
     jmp .ok
@@ -618,7 +618,7 @@ os_fs_load_inode_block:
 .done:
     ret
 
-os_fs_get_path_inode:
+kernel_fs_get_path_inode:
     push esi
     push ebx
     push edx
@@ -637,7 +637,7 @@ os_fs_get_path_inode:
 
         .is_slash:
             mov eax, edx
-            call os_fs_get_subfile_inode
+            call kernel_fs_get_subfile_inode
             mov edx, eax
 
             mov esi, ebx
@@ -650,7 +650,7 @@ os_fs_get_path_inode:
 
 .end:
     mov eax, edx
-    call os_fs_get_subfile_inode
+    call kernel_fs_get_subfile_inode
 
     pop edx
     pop ebx

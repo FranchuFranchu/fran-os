@@ -1,7 +1,7 @@
 
 ; IN = AL: Number to write
 ; OUT = AL: As a character
-os_string_convert_1hex:
+kernel_string_convert_1hex:
     and al, 0xF ; Mask out higher nibble
 
     push ax
@@ -24,18 +24,18 @@ os_string_convert_1hex:
 
 ; IN = AL: Number to write
 ; OUT = AX: As two characters
-os_string_convert_2hex:
+kernel_string_convert_2hex:
     push edx
 
     push eax
     mov edx, 0
 
-    call os_string_convert_1hex
+    call kernel_string_convert_1hex
     or dl, al
 
     pop eax
     shr eax, 4
-    call os_string_convert_1hex
+    call kernel_string_convert_1hex
     shl edx, 8
     or dl, al
     mov eax, edx
@@ -46,18 +46,18 @@ os_string_convert_2hex:
 
 ; IN = AX: Number to write
 ; OUT = EAX: As four characters
-os_string_convert_4hex:
+kernel_string_convert_4hex:
     push edx
 
     push eax
     mov edx, 0
 
-    call os_string_convert_2hex
+    call kernel_string_convert_2hex
     or dx, ax
 
     pop eax
     shr eax, 8
-    call os_string_convert_2hex
+    call kernel_string_convert_2hex
     shl edx, 16
     or dx, ax
     mov eax, edx
