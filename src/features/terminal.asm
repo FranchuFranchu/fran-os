@@ -138,10 +138,12 @@ kernel_terminal_putchar:
     pusha
 
     mov dx, [kernel_terminal_cursor_pos] ; This loads kernel_terminal_column at DH, and kernel_terminal_row at DL
-    
+
 
     cmp al, 0xA
     je .nextline
+    cmp al, 0x8
+    je .backspace
 
     call kernel_terminal_putentryat
     
@@ -159,6 +161,23 @@ kernel_terminal_putchar:
     jne .cursor_moved
 
     mov dl, 0
+
+.backspace:
+    mov al, 0
+
+
+    cmp dh, 0
+    jne .decrement_col
+
+    dec dl
+    mov dh, 0
+    jmp .cursor_moved
+
+.decrement_col:
+    dec dh
+
+    call kernel_terminal_putentryat
+
 
 
 .cursor_moved:
