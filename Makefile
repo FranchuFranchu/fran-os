@@ -23,7 +23,7 @@ disk-images/os_hdb.img: $(GUEST_FILES)
 	mkdir tmp-loop
 
 	sudo mount -o loop disk-images/os_hdb.img tmp-loop
-	sudo chown -R $(USER) .
+	sudo chown -R $(USER) tmp-loop
 	cp -r guest-filesystem/* tmp-loop
 
 	sudo umount tmp-loop || exit
@@ -36,7 +36,7 @@ isodir/boot/os.bin: disk-images/os_kernel.img
 disk-images/os_hda.img: isodir/boot/os.bin
 	grub-mkrescue -o disk-images/os_hda.img isodir
 
-os: disk-images/os_hda.img disk-images/os_hdb.img
+os: disk-images/os_hda.img disk-images/os_hdb.img guest-filesystem/test.bin
 	
 
 bochs: os

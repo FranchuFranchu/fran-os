@@ -4,6 +4,16 @@ extern page_directory
 extern _kernel_pages
 extern _kernel_page_index_end
 
+OS_PAGING_FLAG_4MIB equ 0x80
+OS_PAGING_FLAG_ACCESSED equ 0x20
+OS_PAGING_FLAG_CACHE_DISABLE equ 0x10
+OS_PAGING_FLAG_WRITE_THROUGH equ 0x08
+OS_PAGING_FLAG_USER equ 0x04
+OS_PAGING_FLAG_READ_AND_WRITE equ 0x02
+OS_PAGING_FLAG_PRESENT equ 0x01
+
+
+
 
 os_paging_setup:
     
@@ -23,16 +33,13 @@ os_paging_setup:
     div ebx
     mov ecx, eax
     ; ECX holds the amount of 4MiB pages we can use
-    call os_debug_print_eax
 
     mov ebx, os_paging_directory_index(0xC0000000)
-    mov eax, 0
-    or eax, 0x83
+    mov eax, OS_PAGING_FLAG_PRESENT | OS_PAGING_FLAG_READ_AND_WRITE | OS_PAGING_FLAG_4MIB
 
 .fill_higher_half:
     dec ecx
     mov [page_directory+ebx], eax
-    call os_debug_print_eax
     add eax, 4096*1024
     add ebx, 4
     cmp ebx, _kernel_page_index_end
@@ -40,12 +47,12 @@ os_paging_setup:
 
     dec ecx
 
+    or eax, OS_PAGING_FLAG_USER
     mov ebx, 0
 .fill_lower_half:
     cmp ecx, 0
     je .end
 
-    call os_debug_print_eax
     mov [page_directory+ebx], eax
     add eax, 4096*1024
     add ebx, 4
@@ -58,7 +65,5 @@ os_paging_setup:
     mov ecx, cr3
     mov cr3, ecx    
 
-    mov eax, $
-    call os_debug_print_eax
 
     ret

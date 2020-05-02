@@ -21,6 +21,11 @@ os_sysenter_setup:
     ret
 
 os_sysenter_entry_point:
-    mov dword [0xC00B8000], "a d "
+    mov esi, .teststr
+    call os_terminal_write_string
+
     mov ecx, esp
-    mov edx, os_sleep
+    mov edx, edx
+    sysexit
+
+    .teststr dd "Sysenter executed correctly!", 0

@@ -20,6 +20,7 @@ BITS 32
 %include "features/storage/ata_pio.asm"
 %include "features/string.asm"
 %include "features/terminal.asm"
+%include "features/userspace.asm"
 %include "features/sysenter.asm"
 
 extern os_multiboot_info_pointer
@@ -37,27 +38,17 @@ kernel_main:
 
     call os_idt_setup
     call os_exception_handler_setup
-
     call os_keyboard_setup
-
-
-    sti
+    call os_paging_setup
     ;call os_font_setup
     call os_ata_pio_setup
-
     call os_sysenter_setup
-
     call os_fs_setup
-
+    call os_userspace_setup
 
     mov eax, 2
-    mov esi, .dirname
-    call os_fs_get_subfile_inode
-
     mov esi, .filename
     call os_fs_get_subfile_inode
-
-    call os_debug_print_eax
 
     mov ebx, disk_buffer
     call os_fs_load_inode
@@ -66,15 +57,24 @@ kernel_main:
     call os_fs_load_inode_block
 
 
+    mov ebx, disk_buffer
+
+
+    ; Copy file contents to ring 3 address space
     mov esi, disk_buffer
-    call os_terminal_write_string
+    mov edi, 0
+    mov ecx, 1024
+    rep movsd
+
+    mov ebx, 0
+    call os_switch_to_userspace
 
 
     jmp os_sleep
 
     
 .dirname db "testdir", 0
-.filename db "file.txt", 0
+.filename db "test.bin", 0
 
 os_sleep:
     sti

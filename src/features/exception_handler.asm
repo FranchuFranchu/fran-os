@@ -483,8 +483,6 @@ os_exception_handler_0c:
     db 0 ; Terminate string
 
 os_exception_handler_0d:
-    pop eax
-    
     
     call os_terminal_clear_screen
 
@@ -493,7 +491,12 @@ os_exception_handler_0d:
     mov bl, 0x4F
     call os_exception_handler_print_string
 
+    pop eax
+    call os_debug_print_eax
+
     call os_exception_fault
+
+
     iret
 
 
