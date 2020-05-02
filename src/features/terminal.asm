@@ -1,6 +1,6 @@
 BITS 32
 
-VGA_BUFFER equ 0xC00B8000; 0xB8000
+VGA_BUFFER equ 0xC00B8000
 VGA_WIDTH equ 80
 VGA_HEIGHT equ 25
 
@@ -21,6 +21,22 @@ VGA_COLOR_LIGHT_MAGENTA equ 13
 VGA_COLOR_LIGHT_BROWN equ 14
 VGA_COLOR_WHITE equ 15
 
+
+
+
+%macro write_vga_graphics_register 2
+    
+    mov dx, 0x03D4
+    mov al, %1
+    out dx, al
+
+    mov dx, 0x03D5
+    mov al, %2
+    out dx, al
+
+%endmacro
+ 
+
 ; IN = dx: Output of kernel_terminal_getidx
 kernel_vga_update_cursor:
     pusha
@@ -28,21 +44,10 @@ kernel_vga_update_cursor:
     mov bx, dx
     shr bx, 1 ; Un-multiply by 2
 
-    mov dx, 0x03D4
-    mov al, 0x0F
-    out dx, al
- 
-    mov dx, 0x03D5
-    mov al, bl
-    out dx, al
- 
-    mov dx, 0x03D4
-    mov al, 0x0E
-    out dx, al
- 
-    mov dx, 0x03D5
-    mov al, bh
-    out dx, al
+
+    write_vga_graphics_register 0Fh, bl ; Cursor low register
+
+    write_vga_graphics_register 0Eh, bh ; Cursor high register
 
     popa
     ret
@@ -77,6 +82,7 @@ kernel_terminal_getidx:
     add dx, ax
 
     shl edx, 1 ; Multiply by 2 because each entry takes up 2 bytes
+
 
     pop ebx
     pop eax
@@ -130,9 +136,9 @@ kernel_terminal_put_none_if_space:
 ; IN = al: ASCII char
 kernel_terminal_putchar:
     pusha
+
     mov dx, [kernel_terminal_cursor_pos] ; This loads kernel_terminal_column at DH, and kernel_terminal_row at DL
-    mov dh, [kernel_terminal_column]
-    mov dl, [kernel_terminal_row]
+    
 
     cmp al, 0xA
     je .nextline
@@ -228,6 +234,6 @@ section .data
 kernel_terminal_color db 0
 
 kernel_terminal_cursor_pos:
-kernel_terminal_column db 0
 kernel_terminal_row db 0
+kernel_terminal_column db 0
 section .text

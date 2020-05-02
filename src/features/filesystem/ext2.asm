@@ -144,11 +144,9 @@ kernel_fs_setup:
     mov word [fs_start], 1
 
 
-    ; Now that the superblock is loaded,
-
     
     mov esi, .yessuperblock_msg
-    call kernel_terminal_write_string
+    ;call kernel_terminal_write_string
 
 
     popa
@@ -617,46 +615,6 @@ kernel_fs_load_inode_block:
     clc
 .done:
     ret
-
-kernel_fs_get_path_inode:
-    push esi
-    push ebx
-    push edx
-
-    mov ebx, esi
-    mov edx, 2
-    .find_slash:
-
-        mov al, [ebx]
-
-        cmp al, "/"
-        je .is_slash
-        cmp al, 0
-        je .end
-        jmp .next
-
-        .is_slash:
-            mov eax, edx
-            call kernel_fs_get_subfile_inode
-            mov edx, eax
-
-            mov esi, ebx
-            inc esi
-
-            mov byte [ebx], "/"
-        .next:
-            inc ebx
-            jmp .find_slash
-
-.end:
-    mov eax, edx
-    call kernel_fs_get_subfile_inode
-
-    pop edx
-    pop ebx
-    pop esi
-    ret
-
 
 
 superblock_buffer:

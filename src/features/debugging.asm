@@ -51,6 +51,47 @@ kernel_debug_print_eax:
     pop eax
     ret
 
+
+kernel_debug_serial_eax:
+    push edx
+    push eax
+    push ebx
+    push eax
+
+    mov dx, 0x3f
+    mov dx, 0x3F8
+
+    ror eax, 16
+    call kernel_string_convert_4hex
+    out dx, al
+    shr eax, 8
+    out dx, al
+    shr eax, 8
+    out dx, al
+    shr eax, 8
+    out dx, al
+    shr eax, 8
+
+
+    pop eax
+    call kernel_string_convert_4hex
+    out dx, al
+    shr eax, 8
+    out dx, al
+    shr eax, 8
+    out dx, al
+    shr eax, 8
+    out dx, al
+    shr eax, 8
+    pop ebx
+
+    mov al, 0xa
+    out dx, al
+
+    pop eax
+    pop edx
+    ret
+
 ; Carry, Parity, Auxiliary, Zero, Sign, Trap, Interrupt, Direction, Overflow
 kernel_debug_print_flags:
     pusha

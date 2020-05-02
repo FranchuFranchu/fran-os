@@ -10,7 +10,7 @@ all: os
 src/boot.o: src/boot.asm
 	nasm $(ASSEMBLER_FLAGS) -felf32 src/boot.asm -o src/boot.o
 
-src/kernel.o: src/kernel.asm src/features/* src/features/storage/*
+src/kernel.o: $(shell find src | tr "\n" " ")
 	nasm $(ASSEMBLER_FLAGS) -felf32 src/kernel.asm -o src/kernel.o -Isrc/
 
 guest-filesystem/test.bin: guest-filesystem/test.asm
@@ -58,4 +58,5 @@ qemu: os
         -drive file=disk-images/os_hdb.img,format=raw,index=1,media=disk \
         -d int,guest_errors \
         -D log.log \
-        -m 64M
+        -m 64M \
+        -serial file:serial.log

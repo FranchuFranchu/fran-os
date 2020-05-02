@@ -1,2 +1,3 @@
-*.o
+**.o
 log.log
+serial.log

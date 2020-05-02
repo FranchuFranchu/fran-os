@@ -1,6 +1,8 @@
 ; Memory map for FranOS
 ; - 0x00000000 to 0xC0000000 :
-;   - userspace programs
+;   - userspace processes
+; - 0xC0000000 to 0xFFFFFFFF :
+;   - userspace processes
 
 
 
@@ -18,6 +20,7 @@ BITS 32
 %include "features/eventqueue.asm"
 %include "features/exception_handler.asm"
 %include "features/filesystem/ext2.asm"
+%include "features/filesystem/path.asm"
 %include "features/font.asm"
 %include "features/gdt.asm"
 %include "features/halt_for_key.asm"
@@ -52,9 +55,13 @@ kernel_main:
     call kernel_fs_setup
     call kernel_userspace_setup
 
+
+    write_vga_graphics_register 0Ah, 1110b
+    write_vga_graphics_register 0Bh, 1111b
+
     mov eax, 2
     mov esi, .filename
-    call kernel_fs_get_subfile_inode
+    call kernel_fs_get_path_inode
 
     mov ebx, disk_buffer
     call kernel_fs_load_inode
@@ -79,8 +86,7 @@ kernel_main:
 
     jmp kernel_sleep
 
-    
-.dirname db "testdir", 0
+
 .filename db "test.bin", 0
 
 kernel_sleep:
