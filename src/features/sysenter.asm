@@ -1,3 +1,6 @@
+%include "features/system_calls.asm"
+%include "features/sysenter_vectors_list.asm"
+
 KERNEL_MSR_IA32_SYSENTER_CS  equ 0x174
 KERNEL_MSR_IA32_SYSENTER_ESP equ 0x175
 KERNEL_MSR_IA32_SYSENTER_EIP equ 0x176
@@ -20,12 +23,19 @@ kernel_sysenter_setup:
     wrmsr
     ret
 
-kernel_sysenter_entry_point:
-    mov esi, .teststr
-    call kernel_terminal_write_string
 
-    mov ecx, esp
-    mov edx, edx
+; IN = EBX: System call number, EDX: Return address, ECX: Return stack
+kernel_sysenter_entry_point:
+    ; Make sure system call in range
+    cmp ebx, (kernel_system_calls_end - kernel_system_calls) / 4
+    jge .out_of_range
+
+    call [kernel_system_calls+ebx*4]
+    
     sysexit
+.out_of_range:
+    stc
+    sysexit
+
 
     .teststr dd "Sysenter executed correctly!", 0

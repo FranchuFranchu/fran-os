@@ -5,6 +5,8 @@ with open("../macros/sysenter_vectors.yaml") as f:
     d = yaml.load(f)
 
 with open("../macros/sysenter_vectors.asm", "w") as f:
+
+    f.write("; Generated from tools/make_sysenter_vectors.py\n\n")
     idx = 0
     for k, v in d.items():
         in_registers = v.get("in")
@@ -23,4 +25,15 @@ with open("../macros/sysenter_vectors.asm", "w") as f:
 
         f.write("%define os_{} {}\n\n".format(k, idx))
         idx += 1
+
+with open("../src/features/sysenter_vectors_list.asm", "w") as f:
+
+    f.write("; Generated from tools/make_sysenter_vectors.py\n\n")
+    f.write("kernel_system_calls:\n")
+    idx = 0
+    for k, v in d.items():
+        f.write("    dd kernel_syscall_{} ; {}\n".format(k, idx))
+        idx += 1
+    f.write("\nkernel_system_calls_end:")
+
 

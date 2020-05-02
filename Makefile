@@ -1,15 +1,20 @@
 CC = /usr/local/cross/bin/i686-elf-gcc
+ASSEMBLER_FLAGS = -Imacros/
+
 GUEST_FILES_ = $(shell find guest-filesystem)
 GUEST_FILES = $(shell echo $(GUEST_FILES_) | tr "\n" " ")
 
+
+all: os
+
 src/boot.o: src/boot.asm
-	nasm -felf32 src/boot.asm -o src/boot.o
+	nasm $(ASSEMBLER_FLAGS) -felf32 src/boot.asm -o src/boot.o
 
 src/kernel.o: src/kernel.asm src/features/* src/features/storage/*
-	nasm -felf32 src/kernel.asm -o src/kernel.o -Isrc/
+	nasm $(ASSEMBLER_FLAGS) -felf32 src/kernel.asm -o src/kernel.o -Isrc/
 
 guest-filesystem/test.bin: guest-filesystem/test.asm
-	nasm guest-filesystem/test.asm -o guest-filesystem/test.bin
+	nasm $(ASSEMBLER_FLAGS) guest-filesystem/test.asm -o guest-filesystem/test.bin
 
 disk-images/os_kernel.img: src/kernel.o src/boot.o
 	$(CC) -T linker.ld -o disk-images/os_kernel.img -ffreestanding -O2 -nostdlib src/boot.o src/kernel.o -lgcc
@@ -36,8 +41,12 @@ isodir/boot/os.bin: disk-images/os_kernel.img
 disk-images/os_hda.img: isodir/boot/os.bin
 	grub-mkrescue -o disk-images/os_hda.img isodir
 
-os: disk-images/os_hda.img disk-images/os_hdb.img guest-filesystem/test.bin
-	
+.PHONY: macros
+macros:
+	make -C macros
+
+os: macros disk-images/os_hda.img disk-images/os_hdb.img guest-filesystem/test.bin
+
 
 bochs: os
 	bochs -f bochsrc

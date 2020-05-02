@@ -1,7 +1,19 @@
 no_operation:
   doc: Does nothing
 
-read_file:
+
+debug_print_eax:
+  doc: Dumps the EAX register
+  in:
+    eax: Register to dump
+
+terminate_process:
+  doc: Makes the CPU sleep
+  in:
+    eax: Status code
+
+
+read:
   in:
     esi: File descriptor
     eax: Bytes to read
@@ -9,7 +21,9 @@ read_file:
   out:
     edi: Filled buffer
 
-debug:
-  doc: Dumps the EAX register
+write:
   in:
-    eax: Register to dump
+    edi: File descriptor
+    eax: Bytes to read
+    esi: Buffer
+  out:

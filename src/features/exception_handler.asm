@@ -506,15 +506,23 @@ kernel_exception_handler_0d:
     db 0 ; Terminate string
 
 kernel_exception_handler_0e:
-    pop eax
-    
-    
     call kernel_terminal_clear_screen
+    
+    
 
     mov esi, .errmsg
     mov edi, VGA_BUFFER
     mov bl, 0x4F
     call kernel_exception_handler_print_string
+
+    pop eax
+    call kernel_debug_print_eax
+    call kernel_debug_print_eax
+    call kernel_debug_print_eax
+    call kernel_debug_print_eax
+    call kernel_debug_print_eax
+    mov eax, cr2
+    call kernel_debug_print_eax
 
     call kernel_exception_fault
     iret

@@ -1,3 +1,9 @@
+; Memory map for FranOS
+; - 0x00000000 to 0xC0000000 :
+;   - userspace programs
+
+
+
 section .text
 
 BITS 32
@@ -65,6 +71,7 @@ kernel_main:
     mov edi, 0
     mov ecx, 1024
     rep movsd
+
 
     mov ebx, 0
     call kernel_switch_to_userspace
