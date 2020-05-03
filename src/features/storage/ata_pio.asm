@@ -6,12 +6,24 @@ ATA_PRIMARY_CONTROL equ 0x3F6
 ATA_SECONDARY_CONTROL equ 0x376
 
 
+kernel_ata_pio_writing db 0
+
 kernel_ata_pio_setup:
     mov eax, kernel_ata_pio_irq_handler
     mov ebx, 2eh
     call kernel_define_interrupt
 
     ret
+
+%macro kernel_ata_pio_poll 0
+%%poll:
+    in al, dx  
+    test al, 0x21 ; Only break out of loop when neither ERR nor DF are set
+    jnz %%poll
+
+
+%endmacro
+
 
 ; IN = EDI: Disk buffer, ESI: LBA address (as an immediate value, not the location of the value), ECX: Amount of sectors to load
 ; OUT = Disk buffer filled. Carry set if driver is busy
@@ -22,6 +34,7 @@ kernel_ata_pio_read:
     cmp dword [kernel_ata_pio_pointer_to_buffer], 0 ; Driver busy?
     jne .busy
     mov dword [kernel_ata_pio_pointer_to_buffer], edi
+    mov byte [kernel_ata_pio_writing], 0
 
 
 
@@ -81,11 +94,111 @@ kernel_ata_pio_read:
     popa
     ret
 
+; IN = ESI: Disk buffer, EDI: LBA address (as an immediate value, not the location of the value), ECX: Amount of sectors to load
+; OUT = Disk buffer filled. Carry set if driver is busy
+kernel_ata_pio_write:    
+
+    pusha
+
+
+    cmp dword [kernel_ata_pio_pointer_to_buffer], 0 ; Driver busy?
+    jne .busy
+    mov dword [kernel_ata_pio_pointer_to_buffer], esi
+    mov byte [kernel_ata_pio_writing], 1
+
+    xchg esi, edi
+
+    mov     dx, ATA_PRIMARY_DATA + 6         ; Drive and head port
+    mov     al, 0xB0 ; Drive 2
+
+    call kernel_ata_pio_lba_to_head
+
+    or      al, bl
+    out     dx, al
+    
+
+    mov     dx, ATA_PRIMARY_DATA + 2         ; Sector count port
+    mov     al, 1    
+    out     dx, al
+
+    call kernel_ata_pio_lba_to_sector
+
+    mov     dx,ATA_PRIMARY_DATA + 3         ;Sector number port
+    mov     al, bl            
+    out     dx, al
+
+    call kernel_ata_pio_lba_to_cylinder
+
+    mov     dx, ATA_PRIMARY_DATA + 4         ; Cylinder low port
+    mov     al, bl
+    out     dx, al
+
+
+    mov     dx, ATA_PRIMARY_DATA + 5         ; Cylinder high port
+    mov     al, bh
+
+    out     dx, al
+
+    sti
+    mov     dx, ATA_PRIMARY_DATA + 7 ; Command port
+    mov     al, 0x30          ; Write sectors
+    out     dx, al
+
+
+    mov     dx, ATA_PRIMARY_DATA + 7 ; Status port
+
+    kernel_ata_pio_poll
+
+
+    int 2eh
+
+    mov     dx, ATA_PRIMARY_DATA + 7 ; Command port
+    mov     al, 0xe7          ; Cache flush, sometimes needed
+    out     dx, al
+
+    kernel_ata_pio_poll
+
+
+    clc
+
+    popa
+    ret
+.busy:
+
+    stc ; Set carry flag
+    popa
+    ret
 
 kernel_ata_pio_pointer_to_buffer dd 0
 
 kernel_ata_pio_irq_handler:
     pusha
+
+    cmp byte [kernel_ata_pio_writing], 0
+    je .read
+    jne .write
+
+.read:
+    call kernel_ata_pio_read_irq
+    jmp .done
+
+.write:
+    call kernel_ata_pio_write_irq
+    jmp .done
+
+.done:
+    
+    mov dword [kernel_ata_pio_pointer_to_buffer], 0 ; Clear the buffer pointer to signal that the drive is not busy
+
+    mov al,20h
+    out 0xA0,al  ; acknowledge the interrupt to both PICs
+    out 0x20,al  ;
+
+    popa
+    iret
+
+
+kernel_ata_pio_read_irq:
 
     mov ecx, 0x200 ; Must transfer 512 bytes
     mov edi, [kernel_ata_pio_pointer_to_buffer]
@@ -103,15 +216,31 @@ kernel_ata_pio_irq_handler:
     jne .loopy
 
 .done:
+    ret
 
-    mov dword [kernel_ata_pio_pointer_to_buffer], 0 ; Clear the buffer pointer to signal that the drive is not busy
 
-    mov al,20h
-    out 0xA0,al  ; acknowledge the interrupt to both pics
-    out 0x20,al  ;
+kernel_ata_pio_write_irq:
 
-    popa
-    iret
+    mov ecx, 0x200 ; Must transfer 512 bytes
+    mov esi, [kernel_ata_pio_pointer_to_buffer]
+
+    mov dx, ATA_PRIMARY_DATA
+.loopy:
+    mov ax, [esi]
+
+    out dx, ax
+
+
+    add esi, 2
+    sub ecx, 2
+    cmp ecx, 0
+    jne .loopy
+
+.done:
+    ret
+
+
+
 
 kernel_ata_pio_heads_per_cylinder dd 16
 kernel_ata_pio_sectors_per_track dd 63

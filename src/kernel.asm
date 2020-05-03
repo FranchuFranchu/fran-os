@@ -79,12 +79,11 @@ kernel_main:
     mov ecx, 1024
     rep movsd
 
+    call kernel_fs_allocate_block
+    call kernel_debug_print_eax
 
     mov ebx, 0
-    call kernel_switch_to_userspace
-
-
-    jmp kernel_sleep
+    jmp kernel_switch_to_userspace
 
 
 .filename db "test.bin", 0

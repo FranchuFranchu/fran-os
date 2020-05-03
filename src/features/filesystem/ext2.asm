@@ -43,7 +43,38 @@ read_sectors:
     jne .loopy
 
 
-    ; Poll until ready
+    popa
+    ret
+
+; IN = EAX: LBA, CL: Sector count, EBX: Buffer pointer
+write_sectors:
+    pusha
+    mov esi, ebx
+    and ecx, 0xFF
+    mov edi, eax
+
+
+
+.loopy:
+    mov eax, ecx
+    mov ecx, 1
+
+
+    call kernel_ata_pio_write
+
+    
+    mov ecx, eax
+    jc kernel_exception_fault
+
+.busy:
+    cmp dword [kernel_ata_pio_pointer_to_buffer], 0 ; Driver busy?
+    jne .busy
+
+
+    add esi, 512
+    inc edi
+    loop .loopy
+
 
     popa
     ret
@@ -239,6 +270,7 @@ kernel_fs_get_block_lba:
     ; Sector = Block number * BLOCK_SIZE / SECTOR_SIZE - filesystem_start
     push edx
     push ebx
+
     mov ebx, 0
     mov bx, [BLOCK_SIZE]
 
@@ -256,9 +288,26 @@ kernel_fs_get_block_lba:
     ret
 
 
+; IN =  EAX: Block number
+; OUT = EAX: Group number
+kernel_fs_get_block_group:
+    push edx
+    push ebx
+
+    ;  block group = block / INODES_PER_GROUP
+    mov edx, 0 ; Clear garbage
+    mov dword ebx, BLOCKS_PER_GROUP ; Inodes per block group
+    div ebx 
+
+    pop ebx
+    pop edx
+    ret
+
+
+
 ; IN =  EAX: Block group number, EBX: Buffer
 ; OUT = EBX contents and value changed to point to the start of the entry
-kernel_fs_read_bgdt:
+kernel_fs_load_bgdt:
     ; Push everything except BX
     push eax
     push ecx
@@ -313,11 +362,72 @@ kernel_fs_read_bgdt:
     pop eax
     ret
 
+; IN =  EAX: Block group number, EBX: Buffer
+kernel_fs_write_bgdt:
+    ; Push everything except BX
+    push eax
+    push ecx
+    push edx
+    push edi
+
+
+    push ebx ; Buffer
+    push eax ; Requested block group number
+
+
+    cmp word [BLOCK_SIZE], 1024 ; if this is the case then it begins at block 2
+    clc
+    mov edi, 0
+    jne .block1
+    je .block2
+    .block1: 
+        mov eax, 4
+        call kernel_fs_get_block_lba
+        jmp .load_table
+    .block2:
+        mov eax, 2
+        call kernel_fs_get_block_lba
+        jmp .load_table
+
+.load_table:
+    pop edx ; Requested block group number
+    push eax ; start of BGDT 
+    ; Convert entry number to byte
+    mov eax, 32
+    mul edx
+
+    ; Calculate the sector offset
+    mov edx, 0 
+    mov ecx, SECTOR_SIZE
+    div ecx
+    ; Now in-sector offset is in EDX and sector is in EAX
+
+    mov ebx, eax
+
+    pop eax ; start of BGDT 
+
+    add eax, ebx ; Actual sector number
+
+    mov cl, 1
+    pop ebx ; Buffer
+
+    sub ebx, edx
+
+    call write_sectors
+
+
+    ; Pop everything except BX
+    pop edi
+    pop edx
+    pop ecx
+    pop eax
+    ret
+
 ; IN =  EAX: Group number, EBX: Buffer
 ; OUT = EAX: Block address of start of inode table
 kernel_fs_get_inode_table_block:
     push ebx
-    call kernel_fs_read_bgdt
+    call kernel_fs_load_bgdt
     mov eax, [ebx + 8]
     pop ebx
     ret
@@ -472,7 +582,9 @@ kernel_fs_load_block:
         
     pusha
 
+
     call kernel_fs_get_block_lba
+
     mov ebx, disk_buffer 
     mov ecx, 0
     mov cl, [BLOCK_SECTORS]
@@ -480,6 +592,21 @@ kernel_fs_load_block:
 
     popa
     ret
+
+; IN =  EAX: Block number, EBX: Buffer
+kernel_fs_write_block:
+        
+    pusha
+
+    call kernel_fs_get_block_lba
+    mov ecx, 0
+    mov cl, [BLOCK_SECTORS]
+
+    call write_sectors
+
+    popa
+    ret
+
 
 ; IN = EAX:  Parent directory inode number, ESI: Filename
 ; OUT = EAX: Subfile inode number
@@ -615,6 +742,110 @@ kernel_fs_load_inode_block:
     clc
 .done:
     ret
+
+
+
+; OUT = EAX: Block number that is free for use
+kernel_fs_allocate_block:
+    push ecx
+    push ebx
+
+    xor eax, eax
+
+.find_block_group:
+    mov ebx, disk_buffer
+    call kernel_fs_load_bgdt
+
+
+    inc eax
+    cmp word [ebx+12], 0
+    je .find_block_group
+
+.found_block_group:
+    dec word [ebx+12]
+    dec eax
+
+
+    push ebx
+    call kernel_fs_write_bgdt
+    pop ebx
+
+
+
+    mov eax, [ebx]
+    mov ebx, disk_buffer
+
+
+    mov edi, 0
+    call kernel_fs_load_block
+
+
+    push eax ; Block group number
+
+.find_nonfull_byte:
+    inc ebx
+    cmp byte [ebx], 0xFF
+    je .find_nonfull_byte
+
+.found_nonfull_byte:
+    sub ebx, disk_buffer
+    push ebx ; Free block number / 8
+
+    mov al, [ebx+disk_buffer]
+
+    xor cl, cl
+    rol al, 1
+
+.find_nonfull_bit:
+    ror al, 1
+    inc cl
+    test al, 1
+
+
+    jnz .find_nonfull_bit
+    push ecx ; Free block number % 8
+
+.found_nonfull_bit:
+    or al, 1
+
+.set_bit:
+    rol al, 1
+    dec ecx
+    cmp ecx, 0
+    jne .set_bit
+    ror al, 1
+
+.set_byte:
+    mov [disk_buffer+ebx], al
+
+    pop ecx  ; Free block number % 8
+    pop ebx  ; Free block number / 8
+
+    shl ebx, 3 ; Multiply by 3
+
+
+    and ecx, 111b ; No numbers greater than 7 can be here
+
+
+
+    add ecx, ebx
+
+
+    pop eax
+    mov ebx, disk_buffer
+    mov edi, 0
+    call kernel_fs_write_block
+
+
+
+    mov eax, ecx ; Free block number
+
+    pop ebx
+    pop ecx
+    ret
+
+    
+
 
 
 superblock_buffer:
