@@ -15,15 +15,58 @@ terminate_process:
 
 read:
   in:
-    esi: File descriptor
+    esi: Stream descriptor
     eax: Bytes to read
     edi: Buffer
   out:
     edi: Filled buffer
+    eax: Bytes read 
 
 write:
   in:
-    edi: File descriptor
-    eax: Bytes to read
+    edi: Stream descriptor
+    eax: Bytes to write
     esi: Buffer
   out:
+    eax: Bytes extended
+
+seek:
+  in:
+    esi: Stream descriptor
+    eax: New position in stream descriptor
+  out:
+
+close:
+  in:
+    esi: Stream descriptor
+
+open_file:
+  in:
+    esi: File path
+  out:
+    edi: Stream descriptor
+
+execute:
+  doc: Copies the whole stream descriptor to memory, then replaces the process with it.
+  in: 
+    esi: Stream descriptor
+
+execute_and_fork:
+  doc: Copies the whole stream descriptor to memory, then creates a new process from it.
+  in: 
+    esi: Stream descriptor
+
+fork_process:
+  doc: Forks another process from the current process. Processes don't share code, data or stack
+  out:
+    eax: New thread ID if it's the new process, else 0
+
+fork_thread:
+  doc: Forks another thread from the current thread. Threads share code and data, but not stack.
+  out:
+    eax: New thread ID if it's the new thread, else 0
+
+
+
+
+

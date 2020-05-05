@@ -770,8 +770,6 @@ kernel_fs_allocate_block:
     call kernel_fs_write_bgdt
     pop ebx
 
-
-
     mov eax, [ebx]
     mov ebx, disk_buffer
 
@@ -835,6 +833,7 @@ kernel_fs_allocate_block:
     mov ebx, disk_buffer
     mov edi, 0
     call kernel_fs_write_block
+
 
 
 

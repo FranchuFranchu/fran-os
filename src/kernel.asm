@@ -80,13 +80,12 @@ kernel_main:
     rep movsd
 
     call kernel_fs_allocate_block
-    call kernel_debug_print_eax
 
     mov ebx, 0
     jmp kernel_switch_to_userspace
 
 
-.filename db "test.bin", 0
+.filename db "core_packages/init", 0
 
 kernel_sleep:
     sti
@@ -125,16 +124,12 @@ kernel_restart:
 kernel_shutdown:
     ; This just works on QEMU and BOCHS, won't work on real computers
     mov dx, 0xB004
-    mov ax, 0x0020
-    out dx, al
-    shr ax, 8
-    out dx, al
+    mov ax, 0x2000
+    out dx, ax
     ; Else, try this
     mov dx, 0x604
-    mov ax, 0x0020
-    out dx, al
-    shr ax, 8
-    out dx, al
+    mov ax, 0x2000
+    out dx, ax
 
     mov byte [kernel_terminal_color], 0x0C
     mov byte [kernel_terminal_column], 0

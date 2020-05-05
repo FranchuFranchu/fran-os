@@ -1,8 +1,7 @@
 CC = /usr/local/cross/bin/i686-elf-gcc
 ASSEMBLER_FLAGS = -Imacros/
 
-GUEST_FILES_ = $(shell find guest-filesystem)
-GUEST_FILES = $(shell echo $(GUEST_FILES_) | tr "\n" " ")
+
 
 
 all: os
@@ -13,13 +12,11 @@ src/boot.o: src/boot.asm
 src/kernel.o: $(shell find src | tr "\n" " ")
 	nasm $(ASSEMBLER_FLAGS) -felf32 src/kernel.asm -o src/kernel.o -Isrc/
 
-guest-filesystem/test.bin: guest-filesystem/test.asm
-	nasm $(ASSEMBLER_FLAGS) guest-filesystem/test.asm -o guest-filesystem/test.bin
-
 disk-images/os_kernel.img: src/kernel.o src/boot.o
 	$(CC) -T linker.ld -o disk-images/os_kernel.img -ffreestanding -O2 -nostdlib src/boot.o src/kernel.o -lgcc
 
-disk-images/os_hdb.img: $(GUEST_FILES)
+disk-images/os_hdb.img: $(shell find guest-filesystem)
+
 	- rm disk-images/os_hdb.img
 	dd status=noxfer conv=notrunc if=/dev/zero of=disk-images/os_hdb.img bs=32256 count=16
 	mkfs.ext2 disk-images/os_hdb.img
@@ -44,11 +41,13 @@ disk-images/os_hda.img: isodir/boot/os.bin
 clear_images:
 	rm disk-images/*
 
+
 .PHONY: macros
 macros:
 	make -C macros
+	make -C guest-filesystem/core_packages
 
-os: macros disk-images/os_hda.img disk-images/os_hdb.img guest-filesystem/test.bin
+os: macros disk-images/os_hda.img disk-images/os_hdb.img
 
 
 bochs: os

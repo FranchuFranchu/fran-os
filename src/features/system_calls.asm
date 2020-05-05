@@ -32,3 +32,31 @@ kernel_syscall_write:
     xchg eax, ecx
 
     ret
+
+
+kernel_syscall_seek:
+    ret
+
+
+kernel_syscall_open_file:
+    ret
+
+
+kernel_syscall_close:
+    ret
+
+kernel_syscall_execute:
+    ret
+
+kernel_syscall_execute_and_fork:
+    ret
+
+
+kernel_syscall_fork_process:
+    ret
+
+
+kernel_syscall_fork_thread:
+    ret
+
+
