@@ -37,7 +37,7 @@ resb 16384 ; 16 KiB
 stack_top:
 
 section .data
-align 0x1000
+align 4096
 global page_directory
 page_directory:
     ; This page directory entry identity-maps the first 4MB of the 32-bit physical address space.

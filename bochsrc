@@ -2,5 +2,5 @@ ata0-master:  type=disk, path=disk-images/os_hda.img
 ata0-slave:  type=disk, path=disk-images/os_hdb.img
 boot: disk
 display_library: sdl, options="gui_debug"
-memory: guest=64M, host=64M
+memory: guest=128M, host=128M
 info: action="report"

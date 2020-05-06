@@ -49,6 +49,9 @@ kernel_main:
     call kernel_exception_handler_setup
     call kernel_keyboard_setup
     call kernel_paging_setup
+
+    call kernel_debug_print_eax
+
     ;call kernel_font_setup
     call kernel_ata_pio_setup
     call kernel_sysenter_setup
@@ -78,8 +81,6 @@ kernel_main:
     mov edi, 0
     mov ecx, 1024
     rep movsd
-
-    call kernel_fs_allocate_block
 
     mov ebx, 0
     jmp kernel_switch_to_userspace

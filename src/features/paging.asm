@@ -1,6 +1,7 @@
 %define kernel_paging_directory_index(vaddr) (vaddr >> 20) * 4
 
 extern page_directory
+extern _kernel_size
 extern _kernel_pages
 extern _kernel_page_index_end
 
@@ -12,11 +13,11 @@ KERNEL_PAGING_FLAG_USER equ 0x04
 KERNEL_PAGING_FLAG_READ_AND_WRITE equ 0x02
 KERNEL_PAGING_FLAG_PRESENT equ 0x01
 
+; OUT: EAX: upper Memory / 1024
+kernel_paging_get_memory:
+    push ebx
 
 
-
-kernel_paging_setup:
-    
     mov ebx, [kernel_multiboot_info_pointer]
     mov eax, [ebx]
     ; EAX has flags
@@ -26,6 +27,27 @@ kernel_paging_setup:
     jz kernel_exception_fault
 
     mov eax, [ebx+8]
+
+    pop ebx
+    ret
+
+kernel_paging_get_unallocated_page_directory_entry_in_kernel_space:
+    mov ebx, kernel_paging_page_directory + kernel_paging_directory_index(0xc0000000)
+
+.find:
+    mov eax, [ebx]
+    call kernel_debug_print_eax
+    add ebx, 4
+    cmp dword [ebx], 0
+    jnz .find
+
+    ret
+
+
+kernel_paging_setup:
+    
+    call kernel_paging_get_memory
+    
     ; EAX holds the amount of upper memory in KB
     ; 4MiB = 4194 KB
     mov edx, 0
@@ -67,3 +89,7 @@ kernel_paging_setup:
 
 
     ret
+
+kernel_paging_page_directory:
+dd 0x83
+times 1023 dd 0
