@@ -99,6 +99,8 @@ kernel_pic_allow_irq:
     cmp ecx, 0x8
     jg .pic2
 .pic1:
+    ; This IRQ is sent by PIC 1
+    ; shift mask
     shl ebx, 1
     loop .pic1
     shr ebx, 1
@@ -112,11 +114,15 @@ kernel_pic_allow_irq:
 
     jmp .end
 .pic2:
+    ; This IRQ is sent by PIC 2
+    ; shift mask
 
     sub ecx, 0x8
 .picloop2:
     shl ebx, 1
     loop .picloop2
+
+
     shr ebx, 1
     not ebx
     

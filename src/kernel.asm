@@ -50,14 +50,27 @@ kernel_main:
     call kernel_keyboard_setup
     call kernel_paging_setup
 
-    call kernel_debug_print_eax
-
     ;call kernel_font_setup
     call kernel_ata_pio_setup
     call kernel_sysenter_setup
     call kernel_fs_setup
     call kernel_userspace_setup
 
+    ; Test page allocation
+
+    call kernel_paging_physical_allocate_page_for_page_table
+    mov dword [ebx], "Hell"
+    call kernel_paging_physical_allocate_page_for_page_table
+    mov dword [ebx], "o wo"
+    call kernel_paging_physical_allocate_page_for_page_table
+    mov dword [ebx], "rld!"
+ 
+
+    mov esi, .filename
+    call kernel_terminal_write_string
+
+
+    jmp kernel_sleep ; TODO add user pages
 
     write_vga_graphics_register 0Ah, 1110b
     write_vga_graphics_register 0Bh, 1111b

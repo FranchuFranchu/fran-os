@@ -1,4 +1,4 @@
-%define kernel_paging_directory_index(vaddr) (vaddr >> 20) * 4
+%define kernel_paging_directory_index(vaddr) ((vaddr >> 22) * 4)
 
 extern page_directory
 extern _kernel_size
@@ -12,6 +12,10 @@ KERNEL_PAGING_FLAG_WRITE_THROUGH equ 0x08
 KERNEL_PAGING_FLAG_USER equ 0x04
 KERNEL_PAGING_FLAG_READ_AND_WRITE equ 0x02
 KERNEL_PAGING_FLAG_PRESENT equ 0x01
+
+KERNEL_VIRTUAL_BASE equ 0xC0000000                  ; 3GB
+KERNEL_PAGE_NUMBER equ (KERNEL_VIRTUAL_BASE >> 22)  ; Page directory index of kernel's 4MB PTE.
+
 
 ; OUT: EAX: upper Memory / 1024
 kernel_paging_get_memory:
@@ -31,23 +35,12 @@ kernel_paging_get_memory:
     pop ebx
     ret
 
-kernel_paging_get_unallocated_page_directory_entry_in_kernel_space:
-    mov ebx, kernel_paging_page_directory + kernel_paging_directory_index(0xc0000000)
-
-.find:
-    mov eax, [ebx]
-    call kernel_debug_print_eax
-    add ebx, 4
-    cmp dword [ebx], 0
-    jnz .find
-
-    ret
 
 
 kernel_paging_setup:
     
     call kernel_paging_get_memory
-    
+
     ; EAX holds the amount of upper memory in KB
     ; 4MiB = 4194 KB
     mov edx, 0
@@ -55,41 +48,171 @@ kernel_paging_setup:
     div ebx
     mov ecx, eax
     ; ECX holds the amount of 4MiB pages we can use
-
-    mov ebx, kernel_paging_directory_index(0xC0000000)
+ 
+    mov ebx, kernel_paging_directory_index(KERNEL_VIRTUAL_BASE)
     mov eax, KERNEL_PAGING_FLAG_PRESENT | KERNEL_PAGING_FLAG_READ_AND_WRITE | KERNEL_PAGING_FLAG_4MIB
 
+    ; During the whole loop:
+    ; EAX holds the first free physical address 
+    ; EBX holds the first free virtual page directory
+
 .fill_higher_half:
+
     dec ecx
-    mov [page_directory+ebx], eax
+    mov [kernel_paging_page_directory+ebx], eax
     add eax, 4096*1024
     add ebx, 4
-    cmp ebx, _kernel_page_index_end
+    cmp ebx, _kernel_page_index_end*4
     jng .fill_higher_half
 
+    
     dec ecx
 
-    or eax, KERNEL_PAGING_FLAG_USER
-    mov ebx, 0
-.fill_lower_half:
-    cmp ecx, 0
-    je .end
+    ; Now that we allocated the kernel text and data sections
+    ; We have to configure stuff for dynamic page allocation
 
-    mov [page_directory+ebx], eax
-    add eax, 4096*1024
-    add ebx, 4
-    dec ecx
+.make_meta_page_table:
+    mov dword [kernel_paging_page_directory+ebx], kernel_paging_meta_page_table - KERNEL_VIRTUAL_BASE
+    or dword [kernel_paging_page_directory+ebx], KERNEL_PAGING_FLAG_PRESENT | KERNEL_PAGING_FLAG_READ_AND_WRITE
 
-    jmp .fill_lower_half
+    push ebx
+
+
+    shr bx, 2 ; Divide by 4
+    mov [kernel_paging_meta_page_table_directory_entry], bx
+    pop ebx
 
 .end:
+    sub eax, 4096
+    mov [kernel_paging_first_free_physical_memory_address], eax
+    mov [kernel_paging_first_free_page_table], ax
+
+    mov dword [kernel_paging_page_directory+KERNEL_PAGE_NUMBER*4], 0x83
     ; Reload
-    mov ecx, cr3
-    mov cr3, ecx    
+
+    mov ecx, kernel_paging_page_directory - KERNEL_VIRTUAL_BASE
+    mov cr3, ecx
 
 
     ret
 
+
+
+; OUT = EAX: Virtual memory address of a free kernel page
+kernel_paging_new_kernel_page:
+    xor ebx, ebx
+    mov bx, [kernel_paging_first_free_page_table]
+
+    mov eax,  [kernel_paging_page_directory+ebx]
+    cmp eax, 0
+    je .no_page_directory_entry
+
+.no_page_directory_entry:
+    call kernel_paging_physical_allocate_page_for_page_table
+    or eax, KERNEL_PAGING_FLAG_PRESENT | KERNEL_PAGING_FLAG_READ_AND_WRITE
+    mov [kernel_paging_page_directory+ebx], eax
+
+    ; Now, if we reload cr3 we should be able to read the corresponding virtual memory address
+    mov ecx, cr3
+    mov cr3, ecx
+
+
+
+
+    ret
+
+
+    
+
+
+; OUT = EAX: Physical memory address of page
+kernel_paging_physical_allocate_page:
+    mov eax, [kernel_paging_first_free_physical_memory_address]
+
+
+    ; Round down to closest multiple of 4096
+    and eax, 0xFFFFF000
+
+    add eax, 4096
+
+
+    mov [kernel_paging_first_free_physical_memory_address], eax
+        
+    ret
+
+; This function allocates some space for a page table
+; OUT = EAX: Physical memory address of address where the kernel can place page tables, EBX: Virtual memory address w/ page table
+kernel_paging_physical_allocate_page_for_page_table:
+
+    call kernel_paging_physical_allocate_page
+
+    or eax, KERNEL_PAGING_FLAG_PRESENT | KERNEL_PAGING_FLAG_READ_AND_WRITE
+
+    xor ebx, ebx
+    mov bx, [kernel_paging_first_free_page_in_meta_page_table]
+
+
+
+    mov [kernel_paging_meta_page_table+ebx*4], eax
+
+    inc word [kernel_paging_first_free_page_in_meta_page_table]
+
+    ; ebx * 4KiB + [pde of page table] * 4MiB = virtual address
+    push eax
+
+    xor eax, eax
+    mov ax, [kernel_paging_meta_page_table_directory_entry]
+
+
+
+    shl eax, 22 ; Divide by 4MiB
+    shl ebx, 12 ; Divide by 4KiB 
+
+
+    add ebx, eax
+    mov eax, ebx
+
+    pop eax
+    and eax, 0xFFFFF000 ; Un-set flags
+
+    ; We could use invlpg here
+    ; But i'm not sure how
+    ; Reload cr3 instead
+
+    push ecx
+    mov ecx, cr3
+    mov cr3, ecx
+    pop ecx
+
+    ret
+
+kernel_paging_meta_page_table_directory_entry: dw 0
+kernel_paging_first_free_physical_memory_address: dd 0
+kernel_paging_first_free_kernel_memory_address: dd 0
+kernel_paging_first_free_page_in_meta_page_table: dw 0 ; Offset / 4
+
+kernel_paging_first_free_page_table dw 0
+kernel_paging_first_free_page dw 0 ; Offset of the previous value
+
+section .data
+
+
+align 4096
 kernel_paging_page_directory:
-dd 0x83
-times 1023 dd 0
+    times (KERNEL_PAGE_NUMBER ) dd 0                 ; Pages before kernel space.
+    ; Define three entries for a 16MiB kernel
+    dd 0
+    ;dd 0x00000083
+    times (1024 - KERNEL_PAGE_NUMBER + 1) dd 0  ; Pages after the kernel image.
+
+align 4096
+kernel_paging_meta_page_table:
+    ; Since there are 1024 max page tables, and each page table takes up 4KiB,
+    ; this page table should be enough to hold the pages for the page tables
+
+    ; This page table holds the pages where future page tables will be placed
+    ; Read the previous sentence very carefully
+    times 1024 dd 0
+
+
+section .text
