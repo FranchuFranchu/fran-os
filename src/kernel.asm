@@ -58,13 +58,16 @@ kernel_main:
 
     ; Test page allocation
 
-    call kernel_paging_physical_allocate_page_for_page_table
-    mov dword [ebx], "Hell"
-    call kernel_paging_physical_allocate_page_for_page_table
-    mov dword [ebx], "o wo"
-    call kernel_paging_physical_allocate_page_for_page_table
-    mov dword [ebx], "rld!"
- 
+    call kernel_paging_new_kernel_page
+    call kernel_paging_new_kernel_page
+
+
+    call kernel_paging_new_kernel_page
+
+    mov edi, ebx
+    mov esi, .samplestr
+    mov ecx, 13
+    rep movsd
 
     mov esi, .filename
     call kernel_terminal_write_string
@@ -100,6 +103,7 @@ kernel_main:
 
 
 .filename db "core_packages/init", 0
+.samplestr db "The mitochondria is the powerhouse of the cell", 0
 
 kernel_sleep:
     sti

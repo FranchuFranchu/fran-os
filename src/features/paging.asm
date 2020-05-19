@@ -85,7 +85,8 @@ kernel_paging_setup:
 .end:
     sub eax, 4096
     mov [kernel_paging_first_free_physical_memory_address], eax
-    mov [kernel_paging_first_free_page_table], ax
+    add bx, 4
+    mov [kernel_paging_first_free_page_table], bx
 
     mov dword [kernel_paging_page_directory+KERNEL_PAGE_NUMBER*4], 0x83
     ; Reload
@@ -98,26 +99,57 @@ kernel_paging_setup:
 
 
 
-; OUT = EAX: Virtual memory address of a free kernel page
+; OUT = EBX: Virtual memory address where the page data is stored. Next 4KiB are guaranteed to be free
 kernel_paging_new_kernel_page:
+
     xor ebx, ebx
     mov bx, [kernel_paging_first_free_page_table]
 
-    mov eax,  [kernel_paging_page_directory+ebx]
+    mov eax, [kernel_paging_page_directory+ebx]
     cmp eax, 0
     je .no_page_directory_entry
+    jne .yes_page_directory_entry
 
 .no_page_directory_entry:
+    
+    push ebx
     call kernel_paging_physical_allocate_page_for_page_table
+    mov [kernel_paging_current_kernel_page_table], ebx
+    pop ebx
+
     or eax, KERNEL_PAGING_FLAG_PRESENT | KERNEL_PAGING_FLAG_READ_AND_WRITE
     mov [kernel_paging_page_directory+ebx], eax
+
+
+.yes_page_directory_entry:
+    mov ebx, [kernel_paging_current_kernel_page_table]
+
+
+    add bx, [kernel_paging_first_free_page]
+
+    call kernel_paging_physical_allocate_page
+
+    or eax, 0x3
+
+    mov [ebx], eax
+
+
 
     ; Now, if we reload cr3 we should be able to read the corresponding virtual memory address
     mov ecx, cr3
     mov cr3, ecx
 
+.calculate_virtual_address
+    xor ebx, ebx
+    mov bx, [kernel_paging_first_free_page_table]
+    mov ax, [kernel_paging_first_free_page]
 
+    shl ebx, 20 ; Multiply by 4MiB and divide by 4
+    shl eax, 10 ; Multiply by 4KiB and divide by 4
 
+    add ebx, eax
+
+    add word [kernel_paging_first_free_page], 4
 
     ret
 
@@ -190,6 +222,8 @@ kernel_paging_meta_page_table_directory_entry: dw 0
 kernel_paging_first_free_physical_memory_address: dd 0
 kernel_paging_first_free_kernel_memory_address: dd 0
 kernel_paging_first_free_page_in_meta_page_table: dw 0 ; Offset / 4
+
+kernel_paging_current_kernel_page_table dd 0
 
 kernel_paging_first_free_page_table dw 0
 kernel_paging_first_free_page dw 0 ; Offset of the previous value
