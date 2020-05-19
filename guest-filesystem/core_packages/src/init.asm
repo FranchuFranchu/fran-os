@@ -10,5 +10,5 @@ start:
     system_call os_terminate_process
 
 test_string: 
-db "Hello from userspace"
+db "Hello from userspace!"
 test_string_end:

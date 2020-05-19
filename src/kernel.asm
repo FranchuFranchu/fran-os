@@ -56,24 +56,6 @@ kernel_main:
     call kernel_fs_setup
     call kernel_userspace_setup
 
-    ; Test page allocation
-
-    call kernel_paging_new_kernel_page
-    call kernel_paging_new_kernel_page
-
-
-    call kernel_paging_new_kernel_page
-
-    mov edi, ebx
-    mov esi, .samplestr
-    mov ecx, 13
-    rep movsd
-
-    mov esi, .filename
-    call kernel_terminal_write_string
-
-
-    jmp kernel_sleep ; TODO add user pages
 
     write_vga_graphics_register 0Ah, 1110b
     write_vga_graphics_register 0Bh, 1111b
@@ -89,16 +71,15 @@ kernel_main:
     call kernel_fs_load_inode_block
 
 
-    mov ebx, disk_buffer
-
-
     ; Copy file contents to ring 3 address space
+
+    call kernel_paging_new_user_page
+
     mov esi, disk_buffer
-    mov edi, 0
+    mov edi, ebx
     mov ecx, 1024
     rep movsd
 
-    mov ebx, 0
     jmp kernel_switch_to_userspace
 
 
