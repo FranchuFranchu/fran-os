@@ -1,26 +1,26 @@
 
 
-os_exception_fault:
+kernel_exception_fault:
 
     mov bl, 0x4F
     mov esi, .errmsg2
     mov edi, VGA_BUFFER + VGA_WIDTH * 2 * 2
-    call os_exception_handler_print_string
+    call kernel_exception_handler_print_string
 
     mov esi, .errmsg3
     mov edi, VGA_BUFFER + VGA_WIDTH * 2 * 3
-    call os_exception_handler_print_string
+    call kernel_exception_handler_print_string
 
     mov esi, .errmsg4
     mov edi, VGA_BUFFER + VGA_WIDTH * 2 * 4
-    call os_exception_handler_print_string
+    call kernel_exception_handler_print_string
 
     mov esi, .errmsg5
     mov edi, VGA_BUFFER + VGA_WIDTH * 2 * 5
-    call os_exception_handler_print_string
+    call kernel_exception_handler_print_string
 
     .waitfork:
-    call os_halt_for_key
+    call kernel_halt_for_key
 
     
 
@@ -49,23 +49,23 @@ os_exception_fault:
     mov bl, 0x4B
     mov esi, .errmsg3
     mov edi, VGA_BUFFER + VGA_WIDTH * 2 * 3
-    call os_exception_handler_print_string
+    call kernel_exception_handler_print_string
 
-    jmp os_shutdown
+    jmp kernel_shutdown
 .restart:
     ; Highlight option with blue
     mov bl, 0x4B
     mov esi, .errmsg4
     mov edi, VGA_BUFFER + VGA_WIDTH * 2 * 4
-    call os_exception_handler_print_string
+    call kernel_exception_handler_print_string
     
-    jmp os_restart
+    jmp kernel_restart
 .continue:
     ; Highlight option with blue
     mov bl, 0x4B
     mov esi, .errmsg2
     mov edi, VGA_BUFFER + VGA_WIDTH * 2 * 2
-    call os_exception_handler_print_string
+    call kernel_exception_handler_print_string
     
     ret
 .halt:
@@ -73,19 +73,19 @@ os_exception_fault:
     mov bl, 0x4B
     mov esi, .errmsg5
     mov edi, VGA_BUFFER + VGA_WIDTH * 2 * 5
-    call os_exception_handler_print_string
+    call kernel_exception_handler_print_string
     
-    jmp os_halt
+    jmp kernel_halt
 
 
     .errmsg2 db "Press C to continue.",0
     .errmsg3 db "Press S to shutdown.",0
     .errmsg4 db "Press R to restart.",0
     .errmsg5 db "Press H to halt forever.",0
-os_exception_handler_insert_eax:
+kernel_exception_handler_insert_eax:
     mov ecx, eax ; store eax for later use
 
-    call os_string_convert_4hex ; Convert lower 16 to hex
+    call kernel_string_convert_4hex ; Convert lower 16 to hex
     mov cx, 4
     .loopy:
         shr eax, 8
@@ -98,7 +98,7 @@ os_exception_handler_insert_eax:
 
     mov eax, ecx
     shr eax, 16 ; Get higher 16
-    call os_string_convert_4hex
+    call kernel_string_convert_4hex
     .loopy2:
         shr eax, 8
         cmp cx, 0
@@ -110,7 +110,7 @@ os_exception_handler_insert_eax:
     ret
 
 
-os_exception_handler_print_string:
+kernel_exception_handler_print_string:
     .loopy:
         lodsb
         cmp al, 0
@@ -123,106 +123,106 @@ os_exception_handler_print_string:
     .done:
     ret
 
-os_exception_handler_setup:
-    call os_exception_handler_define_int
+kernel_exception_handler_setup:
+    call kernel_exception_handler_define_int
     ret
-os_exception_handler_define_int:
+kernel_exception_handler_define_int:
 
-    mov eax, os_exception_handler_00
+    mov eax, kernel_exception_handler_00
     mov ebx, 00h
-    call os_define_interrupt
+    call kernel_define_interrupt
     
-    mov eax, os_exception_handler_01
+    mov eax, kernel_exception_handler_01
     mov ebx, 01h
-    call os_define_interrupt
+    call kernel_define_interrupt
     
-    mov eax, os_exception_handler_02
+    mov eax, kernel_exception_handler_02
     mov ebx, 02h
-    call os_define_interrupt
+    call kernel_define_interrupt
     
-    mov eax, os_exception_handler_03
+    mov eax, kernel_exception_handler_03
     mov ebx, 03h
-    call os_define_interrupt
+    call kernel_define_interrupt
     
-    mov eax, os_exception_handler_04
+    mov eax, kernel_exception_handler_04
     mov ebx, 04h
-    call os_define_interrupt
+    call kernel_define_interrupt
     
-    mov eax, os_exception_handler_05
+    mov eax, kernel_exception_handler_05
     mov ebx, 05h
-    call os_define_interrupt
+    call kernel_define_interrupt
     
-    mov eax, os_exception_handler_06
+    mov eax, kernel_exception_handler_06
     mov ebx, 06h
-    call os_define_interrupt
+    call kernel_define_interrupt
     
-    mov eax, os_exception_handler_07
+    mov eax, kernel_exception_handler_07
     mov ebx, 07h
-    call os_define_interrupt
+    call kernel_define_interrupt
     
-    mov eax, os_exception_handler_08
+    mov eax, kernel_exception_handler_08
     mov ebx, 08h
-    call os_define_interrupt
+    call kernel_define_interrupt
     
-    mov eax, os_exception_handler_09
+    mov eax, kernel_exception_handler_09
     mov ebx, 09h
-    call os_define_interrupt
+    call kernel_define_interrupt
     
-    mov eax, os_exception_handler_0a
+    mov eax, kernel_exception_handler_0a
     mov ebx, 0ah
-    call os_define_interrupt
+    call kernel_define_interrupt
     
-    mov eax, os_exception_handler_0b
+    mov eax, kernel_exception_handler_0b
     mov ebx, 0bh
-    call os_define_interrupt
+    call kernel_define_interrupt
     
-    mov eax, os_exception_handler_0c
+    mov eax, kernel_exception_handler_0c
     mov ebx, 0ch
-    call os_define_interrupt
+    call kernel_define_interrupt
     
-    mov eax, os_exception_handler_0d
+    mov eax, kernel_exception_handler_0d
     mov ebx, 0dh
-    call os_define_interrupt
+    call kernel_define_interrupt
     
-    mov eax, os_exception_handler_0e
+    mov eax, kernel_exception_handler_0e
     mov ebx, 0eh
-    call os_define_interrupt
+    call kernel_define_interrupt
     
-    mov eax, os_exception_handler_10
+    mov eax, kernel_exception_handler_10
     mov ebx, 10h
-    call os_define_interrupt
+    call kernel_define_interrupt
     
-    mov eax, os_exception_handler_11
+    mov eax, kernel_exception_handler_11
     mov ebx, 11h
-    call os_define_interrupt
+    call kernel_define_interrupt
     
-    mov eax, os_exception_handler_12
+    mov eax, kernel_exception_handler_12
     mov ebx, 12h
-    call os_define_interrupt
+    call kernel_define_interrupt
     
-    mov eax, os_exception_handler_13
+    mov eax, kernel_exception_handler_13
     mov ebx, 13h
-    call os_define_interrupt
+    call kernel_define_interrupt
     
-    mov eax, os_exception_handler_14
+    mov eax, kernel_exception_handler_14
     mov ebx, 14h
-    call os_define_interrupt
+    call kernel_define_interrupt
     
     ret
 
 
 
-os_exception_handler_00:
+kernel_exception_handler_00:
     
     
-    call os_terminal_clear_screen
+    call kernel_terminal_clear_screen
 
     mov esi, .errmsg
     mov edi, VGA_BUFFER
     mov bl, 0x4F
-    call os_exception_handler_print_string
+    call kernel_exception_handler_print_string
 
-    call os_exception_fault
+    call kernel_exception_fault
     iret
 
 
@@ -231,17 +231,17 @@ os_exception_handler_00:
     times 8 db 0 ; Allocate space for error code (if necessary)
     db 0 ; Terminate string
 
-os_exception_handler_01:
+kernel_exception_handler_01:
     
     
-    call os_terminal_clear_screen
+    call kernel_terminal_clear_screen
 
     mov esi, .errmsg
     mov edi, VGA_BUFFER
     mov bl, 0x4F
-    call os_exception_handler_print_string
+    call kernel_exception_handler_print_string
 
-    call os_exception_fault
+    call kernel_exception_fault
     iret
 
 
@@ -250,25 +250,25 @@ os_exception_handler_01:
     times 8 db 0 ; Allocate space for error code (if necessary)
     db 0 ; Terminate string
 
-os_exception_handler_02:
+kernel_exception_handler_02:
     
     
-    call os_terminal_clear_screen
+    call kernel_terminal_clear_screen
     mov bl, 0x4F
 
     mov esi, .errmsg
     mov edi, VGA_BUFFER
-    call os_exception_handler_print_string
+    call kernel_exception_handler_print_string
 
     mov esi, .errmsg2
     mov edi, VGA_BUFFER + VGA_WIDTH * 2 * 2
-    call os_exception_handler_print_string
+    call kernel_exception_handler_print_string
 
     mov esi, .errmsg3
     mov edi, VGA_BUFFER + VGA_WIDTH * 2 * 3
-    call os_exception_handler_print_string
+    call kernel_exception_handler_print_string
 
-    jmp os_halt
+    jmp kernel_halt
 
     .errmsg2 db "This error is fatal.",0
     .errmsg3 db "Shutdown your computer manually.",0
@@ -279,17 +279,17 @@ os_exception_handler_02:
     times 8 db 0 ; Allocate space for error code (if necessary)
     db 0 ; Terminate string
 
-os_exception_handler_03:
+kernel_exception_handler_03:
     
     
-    call os_terminal_clear_screen
+    call kernel_terminal_clear_screen
 
     mov esi, .errmsg
     mov edi, VGA_BUFFER
     mov bl, 0x4F
-    call os_exception_handler_print_string
+    call kernel_exception_handler_print_string
 
-    call os_exception_fault
+    call kernel_exception_fault
     iret
 
 
@@ -298,17 +298,17 @@ os_exception_handler_03:
     times 8 db 0 ; Allocate space for error code (if necessary)
     db 0 ; Terminate string
 
-os_exception_handler_04:
+kernel_exception_handler_04:
     
     
-    call os_terminal_clear_screen
+    call kernel_terminal_clear_screen
 
     mov esi, .errmsg
     mov edi, VGA_BUFFER
     mov bl, 0x4F
-    call os_exception_handler_print_string
+    call kernel_exception_handler_print_string
 
-    call os_exception_fault
+    call kernel_exception_fault
     iret
 
 
@@ -317,17 +317,17 @@ os_exception_handler_04:
     times 8 db 0 ; Allocate space for error code (if necessary)
     db 0 ; Terminate string
 
-os_exception_handler_05:
+kernel_exception_handler_05:
     
     
-    call os_terminal_clear_screen
+    call kernel_terminal_clear_screen
 
     mov esi, .errmsg
     mov edi, VGA_BUFFER
     mov bl, 0x4F
-    call os_exception_handler_print_string
+    call kernel_exception_handler_print_string
 
-    call os_exception_fault
+    call kernel_exception_fault
     iret
 
 
@@ -336,17 +336,17 @@ os_exception_handler_05:
     times 8 db 0 ; Allocate space for error code (if necessary)
     db 0 ; Terminate string
 
-os_exception_handler_06:
+kernel_exception_handler_06:
     
     
-    call os_terminal_clear_screen
+    call kernel_terminal_clear_screen
 
     mov esi, .errmsg
     mov edi, VGA_BUFFER
     mov bl, 0x4F
-    call os_exception_handler_print_string
+    call kernel_exception_handler_print_string
 
-    call os_exception_fault
+    call kernel_exception_fault
     iret
 
 
@@ -355,17 +355,17 @@ os_exception_handler_06:
     times 8 db 0 ; Allocate space for error code (if necessary)
     db 0 ; Terminate string
 
-os_exception_handler_07:
+kernel_exception_handler_07:
     
     
-    call os_terminal_clear_screen
+    call kernel_terminal_clear_screen
 
     mov esi, .errmsg
     mov edi, VGA_BUFFER
     mov bl, 0x4F
-    call os_exception_handler_print_string
+    call kernel_exception_handler_print_string
 
-    call os_exception_fault
+    call kernel_exception_fault
     iret
 
 
@@ -374,25 +374,25 @@ os_exception_handler_07:
     times 8 db 0 ; Allocate space for error code (if necessary)
     db 0 ; Terminate string
 
-os_exception_handler_08:
+kernel_exception_handler_08:
     
     
-    call os_terminal_clear_screen
+    call kernel_terminal_clear_screen
     mov bl, 0x4F
 
     mov esi, .errmsg
     mov edi, VGA_BUFFER
-    call os_exception_handler_print_string
+    call kernel_exception_handler_print_string
 
     mov esi, .errmsg2
     mov edi, VGA_BUFFER + VGA_WIDTH * 2 * 2
-    call os_exception_handler_print_string
+    call kernel_exception_handler_print_string
 
     mov esi, .errmsg3
     mov edi, VGA_BUFFER + VGA_WIDTH * 2 * 3
-    call os_exception_handler_print_string
+    call kernel_exception_handler_print_string
 
-    jmp os_halt
+    jmp kernel_halt
 
     .errmsg2 db "This error is fatal.",0
     .errmsg3 db "Shutdown your computer manually.",0
@@ -403,17 +403,17 @@ os_exception_handler_08:
     times 8 db 0 ; Allocate space for error code (if necessary)
     db 0 ; Terminate string
 
-os_exception_handler_09:
+kernel_exception_handler_09:
     
     
-    call os_terminal_clear_screen
+    call kernel_terminal_clear_screen
 
     mov esi, .errmsg
     mov edi, VGA_BUFFER
     mov bl, 0x4F
-    call os_exception_handler_print_string
+    call kernel_exception_handler_print_string
 
-    call os_exception_fault
+    call kernel_exception_fault
     iret
 
 
@@ -422,18 +422,18 @@ os_exception_handler_09:
     times 8 db 0 ; Allocate space for error code (if necessary)
     db 0 ; Terminate string
 
-os_exception_handler_0a:
+kernel_exception_handler_0a:
     pop eax
     
     
-    call os_terminal_clear_screen
+    call kernel_terminal_clear_screen
 
     mov esi, .errmsg
     mov edi, VGA_BUFFER
     mov bl, 0x4F
-    call os_exception_handler_print_string
+    call kernel_exception_handler_print_string
 
-    call os_exception_fault
+    call kernel_exception_fault
     iret
 
 
@@ -442,18 +442,18 @@ os_exception_handler_0a:
     times 8 db 0 ; Allocate space for error code (if necessary)
     db 0 ; Terminate string
 
-os_exception_handler_0b:
+kernel_exception_handler_0b:
     pop eax
     
     
-    call os_terminal_clear_screen
+    call kernel_terminal_clear_screen
 
     mov esi, .errmsg
     mov edi, VGA_BUFFER
     mov bl, 0x4F
-    call os_exception_handler_print_string
+    call kernel_exception_handler_print_string
 
-    call os_exception_fault
+    call kernel_exception_fault
     iret
 
 
@@ -462,18 +462,18 @@ os_exception_handler_0b:
     times 8 db 0 ; Allocate space for error code (if necessary)
     db 0 ; Terminate string
 
-os_exception_handler_0c:
+kernel_exception_handler_0c:
     pop eax
     
     
-    call os_terminal_clear_screen
+    call kernel_terminal_clear_screen
 
     mov esi, .errmsg
     mov edi, VGA_BUFFER
     mov bl, 0x4F
-    call os_exception_handler_print_string
+    call kernel_exception_handler_print_string
 
-    call os_exception_fault
+    call kernel_exception_fault
     iret
 
 
@@ -482,18 +482,18 @@ os_exception_handler_0c:
     times 8 db 0 ; Allocate space for error code (if necessary)
     db 0 ; Terminate string
 
-os_exception_handler_0d:
+kernel_exception_handler_0d:
     pop eax
     
     
-    call os_terminal_clear_screen
+    call kernel_terminal_clear_screen
 
     mov esi, .errmsg
     mov edi, VGA_BUFFER
     mov bl, 0x4F
-    call os_exception_handler_print_string
+    call kernel_exception_handler_print_string
 
-    call os_exception_fault
+    call kernel_exception_fault
     iret
 
 
@@ -502,37 +502,27 @@ os_exception_handler_0d:
     times 8 db 0 ; Allocate space for error code (if necessary)
     db 0 ; Terminate string
 
-os_exception_handler_0e:
+kernel_exception_handler_0e:
     pop eax
     
-    
-    call os_terminal_clear_screen
-
-    mov esi, .errmsg
-    mov edi, VGA_BUFFER
-    mov bl, 0x4F
-    call os_exception_handler_print_string
-
-    call os_exception_fault
-    iret
-
+    call kernel_exception_handler_page_fault
 
     .errmsg db "Exception 0x0e: Page Fault",0
     .errmsgend:
     times 8 db 0 ; Allocate space for error code (if necessary)
     db 0 ; Terminate string
 
-os_exception_handler_10:
+kernel_exception_handler_10:
     
     
-    call os_terminal_clear_screen
+    call kernel_terminal_clear_screen
 
     mov esi, .errmsg
     mov edi, VGA_BUFFER
     mov bl, 0x4F
-    call os_exception_handler_print_string
+    call kernel_exception_handler_print_string
 
-    call os_exception_fault
+    call kernel_exception_fault
     iret
 
 
@@ -541,18 +531,18 @@ os_exception_handler_10:
     times 8 db 0 ; Allocate space for error code (if necessary)
     db 0 ; Terminate string
 
-os_exception_handler_11:
+kernel_exception_handler_11:
     pop eax
     
     
-    call os_terminal_clear_screen
+    call kernel_terminal_clear_screen
 
     mov esi, .errmsg
     mov edi, VGA_BUFFER
     mov bl, 0x4F
-    call os_exception_handler_print_string
+    call kernel_exception_handler_print_string
 
-    call os_exception_fault
+    call kernel_exception_fault
     iret
 
 
@@ -561,25 +551,25 @@ os_exception_handler_11:
     times 8 db 0 ; Allocate space for error code (if necessary)
     db 0 ; Terminate string
 
-os_exception_handler_12:
+kernel_exception_handler_12:
     
     
-    call os_terminal_clear_screen
+    call kernel_terminal_clear_screen
     mov bl, 0x4F
 
     mov esi, .errmsg
     mov edi, VGA_BUFFER
-    call os_exception_handler_print_string
+    call kernel_exception_handler_print_string
 
     mov esi, .errmsg2
     mov edi, VGA_BUFFER + VGA_WIDTH * 2 * 2
-    call os_exception_handler_print_string
+    call kernel_exception_handler_print_string
 
     mov esi, .errmsg3
     mov edi, VGA_BUFFER + VGA_WIDTH * 2 * 3
-    call os_exception_handler_print_string
+    call kernel_exception_handler_print_string
 
-    jmp os_halt
+    jmp kernel_halt
 
     .errmsg2 db "This error is fatal.",0
     .errmsg3 db "Shutdown your computer manually.",0
@@ -590,17 +580,17 @@ os_exception_handler_12:
     times 8 db 0 ; Allocate space for error code (if necessary)
     db 0 ; Terminate string
 
-os_exception_handler_13:
+kernel_exception_handler_13:
     
     
-    call os_terminal_clear_screen
+    call kernel_terminal_clear_screen
 
     mov esi, .errmsg
     mov edi, VGA_BUFFER
     mov bl, 0x4F
-    call os_exception_handler_print_string
+    call kernel_exception_handler_print_string
 
-    call os_exception_fault
+    call kernel_exception_fault
     iret
 
 
@@ -609,17 +599,17 @@ os_exception_handler_13:
     times 8 db 0 ; Allocate space for error code (if necessary)
     db 0 ; Terminate string
 
-os_exception_handler_14:
+kernel_exception_handler_14:
     
     
-    call os_terminal_clear_screen
+    call kernel_terminal_clear_screen
 
     mov esi, .errmsg
     mov edi, VGA_BUFFER
     mov bl, 0x4F
-    call os_exception_handler_print_string
+    call kernel_exception_handler_print_string
 
-    call os_exception_fault
+    call kernel_exception_fault
     iret
 
 

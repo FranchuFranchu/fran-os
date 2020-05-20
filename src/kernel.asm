@@ -25,7 +25,7 @@ BITS 32
 %include "features/gdt.asm"
 %include "features/halt_for_key.asm"
 %include "features/keyboard.asm"
-%include "features/paging.asm"
+%include "features/paging/index.asm"
 %include "features/storage/ata_pio.asm"
 %include "features/string.asm"
 %include "features/terminal.asm"

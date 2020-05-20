@@ -111,16 +111,16 @@ kernel_exception_handler_insert_eax:
 
 
 kernel_exception_handler_print_string:
-.loopy:
-    lodsb
-    cmp al, 0
-    je .done
-    mov byte [edi], al
-    inc edi
-    mov byte [edi], bl
-    inc edi
-    jmp .loopy
-.done:
+    .loopy:
+        lodsb
+        cmp al, 0
+        je .done
+        mov byte [edi], al
+        inc edi
+        mov byte [edi], bl
+        inc edi
+        jmp .loopy
+    .done:
     ret
 
 kernel_exception_handler_setup:
@@ -483,6 +483,8 @@ kernel_exception_handler_0c:
     db 0 ; Terminate string
 
 kernel_exception_handler_0d:
+    pop eax
+    
     
     call kernel_terminal_clear_screen
 
@@ -491,12 +493,7 @@ kernel_exception_handler_0d:
     mov bl, 0x4F
     call kernel_exception_handler_print_string
 
-    pop eax
-    call kernel_debug_print_eax
-
     call kernel_exception_fault
-
-
     iret
 
 
@@ -506,27 +503,16 @@ kernel_exception_handler_0d:
     db 0 ; Terminate string
 
 kernel_exception_handler_0e:
-    call kernel_terminal_clear_screen
-    
-    
-
-    mov esi, .errmsg
-    mov edi, VGA_BUFFER
-    mov bl, 0x4F
-    call kernel_exception_handler_print_string
-
+    mov [.tmp], eax
     pop eax
-    call kernel_debug_print_eax
-    call kernel_debug_print_eax
-    call kernel_debug_print_eax
-    call kernel_debug_print_eax
-    call kernel_debug_print_eax
-    mov eax, cr2
-    call kernel_debug_print_eax
+    pusha
+    call kernel_exception_handler_page_fault
+    popa
 
-    call kernel_exception_fault
+    mov eax, [.tmp]
     iret
 
+    .tmp dd 0
 
     .errmsg db "Exception 0x0e: Page Fault",0
     .errmsgend:

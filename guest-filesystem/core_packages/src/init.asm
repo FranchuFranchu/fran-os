@@ -6,6 +6,7 @@ start:
     mov esi, test_string
     mov eax, test_string_end - test_string
     mov edi, 0
+    mov ebx, [0x3000]
     system_call os_write
     system_call os_terminate_process
 
