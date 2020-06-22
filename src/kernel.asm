@@ -73,6 +73,20 @@ kernel_main:
 
     ; Copy file contents to ring 3 address space
 
+    mov esi, .samplestr
+    mov edi, disk_buffer
+    mov ecx, 40
+    rep movsd
+
+
+    mov ebx, disk_buffer
+    call kernel_fs_write_inode
+
+    call kernel_debug_print_eax
+
+    jmp kernel_sleep
+
+
     call kernel_paging_new_user_page
 
     mov esi, disk_buffer

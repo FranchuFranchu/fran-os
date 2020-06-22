@@ -272,8 +272,8 @@ kernel_fs_get_block_lba:
     push ebx
 
     mov ebx, 0
+    mov edx, 0
     mov bx, [BLOCK_SIZE]
-
     mul ebx
 
 
@@ -493,6 +493,78 @@ kernel_fs_load_inode:
 
     ret
 
+; IN =  EAX: Inode number, EBX: Buffer
+kernel_fs_write_inode:
+    push eax
+    push ecx
+    push edx
+    push edi
+    push ebx
+
+    push eax ; Inode number
+    call kernel_fs_get_inode_index
+
+    mov ecx, INODE_SIZE
+    mul ecx
+
+    ; Now divide by block size
+    mov edx, 0 ; Clear garbage
+    mov ecx, 0
+    mov cx, [BLOCK_SIZE]
+    div ecx
+
+
+    ; Block offset is in eax
+    ; Byte offset is in edx
+
+
+    mov ecx, eax ; Block offset
+
+    pop eax ; Inode number
+    push edx ; Byte offset
+
+
+    call kernel_fs_get_inode_group
+    call kernel_fs_get_inode_table_block
+
+
+    pusha
+    mov ebx, second_disk_buffer
+    mov edi, 0
+    call kernel_fs_load_block
+    popa
+
+    pop edx ; Byte offset
+    pop esi
+
+    mov edi, disk_buffer
+    add edi, edx
+
+    push ecx
+    mov ecx, INODE_SIZE
+    rep movsd
+
+    pop ecx
+
+
+    
+    mov ebx, disk_buffer
+    mov edi, 0
+    call kernel_fs_write_block
+    mov ebx, disk_buffer
+
+
+
+
+
+    pop edi
+    pop edx
+    pop ecx
+    pop eax
+
+
+    ret
+
 ; Gets the location for the EAXth block that contains a file
 ; IN =  EAX: Block index, EBX: Buffer with the inode
 ; OUT = EAX: Block number
@@ -598,9 +670,16 @@ kernel_fs_write_block:
         
     pusha
 
+    mov edi, 0
     call kernel_fs_get_block_lba
     mov ecx, 0
     mov cl, [BLOCK_SECTORS]
+
+    call kernel_debug_print_eax
+    push eax
+    mov eax, ebx
+    call kernel_debug_print_eax
+    pop eax
 
     call write_sectors
 
@@ -848,4 +927,6 @@ kernel_fs_allocate_block:
 
 
 superblock_buffer:
+times 1024 db 0
+second_disk_buffer:
 times 1024 db 0
