@@ -1,4 +1,4 @@
-NASM_FLAGS = -I../../macros/
+sNASM_FLAGS = -I../../macros/
 
 bin/%: src/*.asm
 	nasm $(NASM_FLAGS) -o $@ $<

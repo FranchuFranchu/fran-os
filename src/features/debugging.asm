@@ -16,12 +16,16 @@ kernel_debug_dump_memory:
     dec ecx
     cmp ecx, 0
     jne .dump
+
+    mov al, 0xa
+    call kernel_terminal_putchar
+
+
     popa
     ret
 
 kernel_debug_print_eax:
-    push eax
-    push ebx
+    pusha
     push eax
     ror eax, 16
     call kernel_string_convert_4hex
@@ -45,10 +49,10 @@ kernel_debug_print_eax:
     shr eax, 8
     call kernel_terminal_putchar
     shr eax, 8
-    pop ebx
     mov al, 0xa
     call kernel_terminal_putchar
-    pop eax
+    
+    popa
     ret
 
 

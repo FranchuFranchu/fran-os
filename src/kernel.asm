@@ -26,9 +26,11 @@ BITS 32
 %include "features/halt_for_key.asm"
 %include "features/keyboard.asm"
 %include "features/paging/index.asm"
+%include "features/pci.asm"
 %include "features/storage/ata_pio.asm"
 %include "features/string.asm"
 %include "features/terminal.asm"
+%include "features/usb.asm"
 %include "features/userspace.asm"
 %include "features/sysenter.asm"
 
@@ -44,6 +46,7 @@ kernel_main:
     mov dh, VGA_COLOR_LIGHT_GREY
     mov dl, VGA_COLOR_BLACK
     call kernel_terminal_set_color
+    call kernel_pci_setup
 
     call kernel_idt_setup
     call kernel_exception_handler_setup
@@ -55,41 +58,91 @@ kernel_main:
     call kernel_sysenter_setup
     call kernel_fs_setup
     call kernel_userspace_setup
+    call kernel_usb_setup
 
 
     write_vga_graphics_register 0Ah, 1110b
     write_vga_graphics_register 0Bh, 1111b
 
+%ifdef COMMENT
+    push eax
+    push ebx ; Address of inode 
+
+
+    mov esi, .samplestr
+    mov ecx, kernel_sleep - .samplestr
+    mov edi, kernel_block_sized_buffer
+    rep movsd
+
+
+
+    mov eax, 0
+    mov ebx, kernel_block_sized_buffer
+    mov edi, kernel_fs_disk_buffer
+    call kernel_fs_create_or_override_inode_block
+
+
+    pop ebx
+
+    sub ebx, kernel_fs_disk_buffer
+
+
+
+    add ebx, edi
+
+    mov eax, 0x3
+    call kernel_fs_set_file_size
+
+    pop eax
+
+
+
     mov eax, 2
-    mov esi, .filename
+    mov esi, .test_filename
+    call kernel_fs_get_path_inode
+    call kernel_debug_print_eax
+    
+
+    mov ebx, kernel_fs_disk_buffer
+    call kernel_fs_load_inode
+    mov ebx, kernel_fs_disk_buffer
+
+    xchg bx, bx
+
+    mov esi, kernel_fs_disk_buffer
+    mov edi, kernel_fs_second_disk_buffer
+    mov ecx, 1024
+    rep movsd
+    
+    ret
+    mov ebx, kernel_fs_second_disk_buffer
+    call kernel_fs_write_inode
+
+    mov dword [0xC00B8000], "e n "
+    jmp kernel_sleep
+    ret
+%endif
+    ; Load userspace program
+
+
+
+
+    mov eax, 2
+    mov esi, .userspace_filename
     call kernel_fs_get_path_inode
 
-    mov ebx, disk_buffer
+    call kernel_debug_print_eax    
+
+    mov ebx, kernel_fs_disk_buffer
     call kernel_fs_load_inode
     mov eax, 0
 
     call kernel_fs_load_inode_block
 
-
     ; Copy file contents to ring 3 address space
-
-    mov esi, .samplestr
-    mov edi, disk_buffer
-    mov ecx, 40
-    rep movsd
-
-
-    mov ebx, disk_buffer
-    call kernel_fs_write_inode
-
-    call kernel_debug_print_eax
-
-    jmp kernel_sleep
-
-
     call kernel_paging_new_user_page
 
-    mov esi, disk_buffer
+    mov esi, kernel_fs_disk_buffer
     mov edi, ebx
     mov ecx, 1024
     rep movsd
@@ -97,7 +150,8 @@ kernel_main:
     jmp kernel_switch_to_userspace
 
 
-.filename db "core_packages/init", 0
+.userspace_filename db "core_packages/init", 0
+.test_filename db "testdir/file.txt", 0
 .samplestr db "The mitochondria is the powerhouse of the cell", 0
 
 kernel_sleep:
@@ -162,7 +216,7 @@ kernel_unhandled_interrupt:
     pop eax     ; restore state
     iret
 
-disk_buffer:
-    times 2048   db 0
+kernel_block_sized_buffer:
+    times 1024 db 0
     
 hello_string db "Hello, kernel World!", 0xA, 0 ; 0xA = line feed

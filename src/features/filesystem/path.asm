@@ -23,11 +23,12 @@ kernel_fs_get_path_inode:
 
     jmp .loopy
 .slash:
+    call kernel_terminal_write_string
     mov byte [esi], 0
 
-    xchg esi, ebx
+    xchg ebx, esi
     call kernel_fs_get_subfile_inode
-    xchg esi, ebx
+    xchg ebx, esi
 
     mov byte [esi], "/"
 

@@ -1,0 +1,19 @@
+#include <stdlib.h>
+#include <stdint.h>
+
+uint32_t pciConfigReadWord (uint8_t bus, uint8_t slot, uint8_t func, uint8_t offset) {
+    uint32_t address;
+    uint32_t lbus  = (uint32_t)bus;
+    uint32_t lslot = (uint32_t)slot;
+    uint32_t lfunc = (uint32_t)func;
+    uint16_t tmp = 0;
+ 
+    /* create configuration address as per Figure 1 */
+    address = (uint32_t)((lbus << 16) | (lslot << 11) |
+              (lfunc << 8) | (offset & 0xfc) | ((uint32_t)0x80000000));
+    return address;
+}
+
+int main(void) {
+    printf("%x", pciConfigReadWord(0, 9, 1, 0));
+}

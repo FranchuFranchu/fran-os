@@ -15,8 +15,17 @@ src/kernel.o: $(shell find src | tr "\n" " ")
 disk-images/os_kernel.img: src/kernel.o src/boot.o
 	$(CC) -T linker.ld -o disk-images/os_kernel.img -ffreestanding -O2 -nostdlib src/boot.o src/kernel.o -lgcc
 
-disk-images/os_hdb.img: $(shell find guest-filesystem)
+mountdir:
+	rm -rf tmp-loop
+	mkdir tmp-loop
 
+	sudo mount -o loop disk-images/os_hdb.img tmp-loop
+	sudo chown -R $(USER):$(USER) tmp-loop
+	@echo -n Press enter to exit...
+	@bash -c "read"
+	sudo umount tmp-loop || exit
+
+disk-images/os_hdb.img: $(shell find guest-filesystem)
 	- rm disk-images/os_hdb.img
 	dd status=noxfer conv=notrunc if=/dev/zero of=disk-images/os_hdb.img bs=32256 count=16
 	mkfs.ext2 disk-images/os_hdb.img
@@ -29,6 +38,8 @@ disk-images/os_hdb.img: $(shell find guest-filesystem)
 	cp -r guest-filesystem/* tmp-loop
 
 	sudo umount tmp-loop || exit
+
+
 
 
 isodir/boot/os.bin: disk-images/os_kernel.img
@@ -61,4 +72,18 @@ qemu: os
         -d int,guest_errors \
         -D log.log \
         -m 64M \
-        -serial file:serial.log
+        -serial file:serial.log \
+       	-device pci-testdev,id=testdev \
+       	-netdev user,id=network_card,ipv6=off \
+       	-device ne2k_pci,netdev=network_card,mac=52:54:98:76:54:32 \
+       	-device qemu-xhci \
+
+#-device e1000,netdev=n1,mac=52:54:98:76:54:32 \
+#
+
+
+mount:
+	sudo mount -o loop disk-images/os_hdb.img tmp-loop
+	sudo chown -R $(USER) tmp-loop
+	read _
+	sudo umount tmp-loop || exit
