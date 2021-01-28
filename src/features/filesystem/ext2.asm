@@ -207,10 +207,10 @@ kernel_fs_get_inode_group:
     push edx
     push ebx
 
-    ;  block group = (inode – 1) / INODES_PER_GROUP
-    mov edx, 0 ; Clear garbage
+    ;  block group = (inode - 1) / INODES_PER_GROUP
+    xor edx, edx ; Clear garbage
     mov dword ebx, INODES_PER_GROUP ; Inodes per block group
-    sub eax, 1
+    dec eax
     div ebx 
 
     pop ebx
@@ -218,17 +218,17 @@ kernel_fs_get_inode_group:
     ret
 
 ; IN =  EAX: Inode number
-; OUT = EAX: Index inside block
+; OUT = EAX: Index inside block group
 kernel_fs_get_inode_index:
     push edx
     push ebx
 
 
-    ; index = (inode – 1) % INODES_PER_GROUP
-    mov edx, 0 ; Clean garbage
+    ; index = (inode - 1) % INODES_PER_GROUP
+    xor edx, edx ; Clean garbage
 
     mov dword ebx, INODES_PER_GROUP ; Inodes per block group
-    sub eax, 1
+    dec eax
     div ebx
 
     mov eax, edx
@@ -452,7 +452,6 @@ kernel_fs_load_inode:
     mov cx, [BLOCK_SIZE]
     div ecx
 
-
     ; Block offset is in eax
     ; Byte offset is in edx
 
@@ -479,10 +478,9 @@ kernel_fs_load_inode:
 
     pop edx ; Byte offset
 
-    mov eax, edx
-    mov eax, disk_buffer
     add ebx, edx
-    mov eax, ebx
+
+
 
 
     pop edi
@@ -492,6 +490,59 @@ kernel_fs_load_inode:
 
 
     ret
+
+
+; IN =  EAX: Inode number, EBX: Buffer
+; OUT = EBX points to the inode
+kernel_fs_write_inode:
+    pusha
+
+    
+    push eax ; Inode number
+    call kernel_fs_get_inode_index
+
+    mov ecx, INODE_SIZE
+    mul ecx
+
+    ; Now divide by block size
+    mov edx, 0 ; Clear garbage
+    mov ecx, 0
+    mov cx, [BLOCK_SIZE]
+    div ecx
+    
+
+    ; Block offset is in eax
+    ; Byte offset is in edx
+
+
+    mov ecx, eax ; Block offset
+
+    pop eax ; Inode number
+    push edx ; Byte offset
+
+
+    call kernel_fs_get_inode_group
+    push ebx
+    mov ebx, bgdt_buffer
+    call kernel_fs_get_inode_table_block
+    pop ebx
+
+    add eax, ecx
+    
+    
+    mov ebx, disk_buffer
+    mov edi, 0
+    call kernel_fs_write_block
+    mov ebx, disk_buffer
+
+
+
+    pop edx ; Byte offset
+
+    add ebx, edx
+    popa
+    ret
+
 
 ; Gets the location for the EAXth block that contains a file
 ; IN =  EAX: Block index, EBX: Buffer with the inode
@@ -606,7 +657,15 @@ kernel_fs_write_block:
 
     popa
     ret
-
+    
+%macro align_to_4byte 1
+    test %1, 11b
+    jz %%dontadd1
+    
+    and %1, ~11b
+    add %1, 4
+    %%dontadd1
+%endmacro
 
 ; IN = EAX:  Parent directory inode number, ESI: Filename
 ; OUT = EAX: Subfile inode number
@@ -628,20 +687,18 @@ kernel_fs_get_subfile_inode:
     call kernel_fs_load_block
     mov ebx, disk_buffer
 
-
-
     mov ecx, 0x100
     push eax
     add ebx, 0xc
     .look_for_filename:
         push ecx ; look_for_filename counter
-
+        
         mov eax, ebx
 
         mov edi, ebx
         add edi, 8
 
-        mov ecx, 0
+        xor ecx, ecx ; Equivalent to mov ecx, 0, but smaller
         mov cl, [ebx+6] ; Name length
 
         push esi
@@ -668,12 +725,12 @@ kernel_fs_get_subfile_inode:
 
         .notequal:
 
-
         pop ecx
         pop esi
 
         mov eax, 0
         mov ax, [ebx+4]
+        
         add ebx, eax
 
         pop ecx ; look_for_filename counter
@@ -690,6 +747,13 @@ kernel_fs_get_subfile_inode:
     mov eax, [ebx]
     clc
     jmp .done
+    
+.searched_too_far:
+    mov esi, .errstr
+    call kernel_terminal_write_string
+    jmp kernel_halt
+    
+.errstr: db "Searched too far!", 0
 
 .notfound:
     stc
@@ -843,9 +907,9 @@ kernel_fs_allocate_block:
     pop ecx
     ret
 
-    
-
-
+align 16
 
 superblock_buffer:
+times 1024 db 0
+bgdt_buffer:
 times 1024 db 0

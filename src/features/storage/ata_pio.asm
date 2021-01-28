@@ -24,6 +24,17 @@ kernel_ata_pio_setup:
 
 %endmacro
 
+ata_pio_error:
+    pusha
+    mov dh, VGA_COLOR_WHITE
+    mov dl, VGA_COLOR_RED
+    call kernel_terminal_set_color
+    mov esi, .fatalerr
+    call kernel_terminal_write_string
+    popa
+    jmp kernel_halt
+    
+.fatalerr: db "Fatal disk reading error! Use a debugger to see the state of the registers"
 
 ; IN = EDI: Disk buffer, ESI: LBA address (as an immediate value, not the location of the value), ECX: Amount of sectors to load
 ; OUT = Disk buffer filled. Carry set if driver is busy
@@ -68,19 +79,25 @@ kernel_ata_pio_read:
     mov     al, bh
 
     out     dx, al
-
+    
     sti
     mov     dx, ATA_PRIMARY_DATA + 7 ; Command port
     mov     al, 0x20          ; Read sectors
     out     dx, al
 
     mov     dx, ATA_PRIMARY_DATA + 7 ; Status port
-
+    
 .poll:
+    je .stoppolling
     in  al, dx  
-    and al, 0x28 ; Test if either DF or ERR is set
-    jz .poll
-
+    
+    test al, 0x80 ; Test if BSY is set
+    jnz .poll
+    
+    test al, 0x21 ; Test if either ERR or DF is set
+    jnz ata_pio_error
+    
+.stoppolling:
 
     int 2eh
 
@@ -159,6 +176,7 @@ kernel_ata_pio_write:
     kernel_ata_pio_poll
 
 
+
     clc
 
     popa
@@ -175,7 +193,6 @@ kernel_ata_pio_irq_handler:
     pusha
 
     cmp byte [kernel_ata_pio_writing], 0
-    je .read
     jne .write
 
 .read:
@@ -214,7 +231,6 @@ kernel_ata_pio_read_irq:
     sub ecx, 2
     cmp ecx, 0
     jne .loopy
-
 .done:
     ret
 

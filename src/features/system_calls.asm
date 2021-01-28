@@ -38,7 +38,7 @@ kernel_syscall_seek:
     ret
 
 
-kernel_syscall_open_file:
+kernel_syscall_open_filesystem_file:
     ret
 
 

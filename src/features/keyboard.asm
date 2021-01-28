@@ -12,15 +12,6 @@ KEYBOARD_TOGGLE_CAPSLOCK equ  1b
 
 %include "features/scancodes.inc"
 
-kernel_keyboard_event_queue:
-    dd kernel_keyboard_send_next_byte
-    db 10h
-    db 10h
-    db 0 ; Align
-    db 0
-
-    times 10h dd 0
-
 kernel_keyboard_driver_state db 0
 ; 0 = must send scancode set command
 ; 1 = must send scancode number (3)
@@ -38,9 +29,6 @@ kernel_keyboard_setup:
     mov ebx, 21h
     call kernel_define_interrupt
 
-    ;mov dword [kernel_eventqueue_on_next_tick_vectors], kernel_keyboard_phase_1
-    ; Disabled due to bug
-
     ret
 kernel_keyboard_send_next_byte:
     call kernel_terminal_putchar
@@ -52,9 +40,6 @@ kernel_keyboard_phase_1:
 
     mov al, 0xF0
     out 60h, al
-
-    mov dword [kernel_eventqueue_on_next_tick_vectors], kernel_keyboard_phase_2
-
     ret
 
 kernel_keyboard_phase_2:
@@ -77,8 +62,6 @@ kernel_keyboard_phase_2:
         call kernel_terminal_putchar
         mov al, PS2_KEYBOARD_PREFERRED_SCANCODE_SET
         out 0x60, al
-
-        mov dword [kernel_eventqueue_on_next_tick_vectors], 0
 
         mov byte [kernel_keyboard_driver_state], 0xF
         ret

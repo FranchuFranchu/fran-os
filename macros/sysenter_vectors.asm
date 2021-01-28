@@ -27,7 +27,7 @@
 
 ; IN = esi: File path
 ; OUT = edi: Stream descriptor
-%define os_open_file 7
+%define os_open_filesystem_file 7
 
 ; Copies the whole stream descriptor to memory, then replaces the process with it.
 ; IN = esi: Stream descriptor

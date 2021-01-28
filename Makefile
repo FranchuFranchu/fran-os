@@ -15,8 +15,21 @@ src/kernel.o: $(shell find src | tr "\n" " ")
 disk-images/os_kernel.img: src/kernel.o src/boot.o
 	$(CC) -T linker.ld -o disk-images/os_kernel.img -ffreestanding -O2 -nostdlib src/boot.o src/kernel.o -lgcc
 
-disk-images/os_hdb.img: $(shell find guest-filesystem)
+mountdir:
+	sudo mount -o loop disk-images/os_hdb.img tmp-loop
+	sudo chown -R $(USER) tmp-loop
+	cat /dev/stdin | head -n 0
+	sudo umount tmp-loop || exit
+	
+.PHONY: imount
+imount: 
+	sudo mount -o loop disk-images/os_hdb.img tmp-loop
+	sudo chown -R $(USER) tmp-loop
+	bash -c "echo Press any key to unmount...; read" 
+	sudo chown -R root tmp-loop
+	sudo umount tmp-loop || exit
 
+disk-images/os_hdb.img: $(shell find guest-filesystem)
 	- rm disk-images/os_hdb.img
 	dd status=noxfer conv=notrunc if=/dev/zero of=disk-images/os_hdb.img bs=32256 count=16
 	mkfs.ext2 disk-images/os_hdb.img
@@ -27,6 +40,7 @@ disk-images/os_hdb.img: $(shell find guest-filesystem)
 	sudo mount -o loop disk-images/os_hdb.img tmp-loop
 	sudo chown -R $(USER) tmp-loop
 	cp -r guest-filesystem/* tmp-loop
+	sudo chown -R root tmp-loop
 
 	sudo umount tmp-loop || exit
 
@@ -62,3 +76,15 @@ qemu: os
         -D log.log \
         -m 64M \
         -serial file:serial.log
+
+qemugdb: os
+	gnome-terminal -- gdb --eval-command="target remote localhost:1234"
+	qemu-system-i386   \
+        -s \
+        -drive file=disk-images/os_hda.img,format=raw,index=0,media=disk \
+        -drive file=disk-images/os_hdb.img,format=raw,index=1,media=disk \
+        -d int,guest_errors \
+        -D log.log \
+        -m 64M \
+        -serial file:serial.log
+	

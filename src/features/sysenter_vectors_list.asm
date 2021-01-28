@@ -8,7 +8,7 @@ kernel_system_calls:
     dd kernel_syscall_write ; 4
     dd kernel_syscall_seek ; 5
     dd kernel_syscall_close ; 6
-    dd kernel_syscall_open_file ; 7
+    dd kernel_syscall_open_filesystem_file ; 7
     dd kernel_syscall_execute ; 8
     dd kernel_syscall_execute_and_fork ; 9
     dd kernel_syscall_fork_process ; 10

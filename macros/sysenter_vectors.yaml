@@ -40,7 +40,7 @@ close:
   in:
     esi: Stream descriptor
 
-open_file:
+open_filesystem_file:
   in:
     esi: File path
   out:

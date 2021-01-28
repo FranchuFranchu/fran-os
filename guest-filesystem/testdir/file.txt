@@ -1,1 +1,1 @@
-Sample file inside a directory
+dSample file inside a directoryd

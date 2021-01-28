@@ -60,6 +60,22 @@ kernel_main:
     write_vga_graphics_register 0Ah, 1110b
     write_vga_graphics_register 0Bh, 1111b
 
+%ifdef COMMENT
+    mov eax, 2
+    mov esi, .other_filename
+    call kernel_fs_get_path_inode
+    call kernel_debug_print_eax
+
+    ; mov eax, 21 ; HACK
+    mov ebx, disk_buffer
+    call kernel_fs_load_inode
+
+    mov dword [ebx+4], 16
+    
+    call kernel_debug_print_eax
+    mov ebx, disk_buffer
+    call kernel_fs_write_inode
+%endif
     mov eax, 2
     mov esi, .filename
     call kernel_fs_get_path_inode
@@ -83,7 +99,8 @@ kernel_main:
     jmp kernel_switch_to_userspace
 
 
-.filename db "core_packages/init", 0
+.filename db "core_packages/bin/init", 0
+.other_filename db "testdir/file.txt"
 .samplestr db "The mitochondria is the powerhouse of the cell", 0
 
 kernel_sleep:
@@ -148,6 +165,7 @@ kernel_unhandled_interrupt:
     pop eax     ; restore state
     iret
 
+align 16
 disk_buffer:
     times 2048   db 0
     
