@@ -37,10 +37,9 @@ extern gdt_desc
 global kernel_main
 kernel_main:
     lgdt [kernel_gdt_desc]
-
     call kernel_terminal_setup
     call kernel_terminal_clear_screen
-
+    
     mov dh, VGA_COLOR_LIGHT_GREY
     mov dl, VGA_COLOR_BLACK
     call kernel_terminal_set_color
@@ -60,22 +59,28 @@ kernel_main:
     write_vga_graphics_register 0Ah, 1110b
     write_vga_graphics_register 0Bh, 1111b
 
-%ifdef COMMENT
+
     mov eax, 2
     mov esi, .other_filename
     call kernel_fs_get_path_inode
-    call kernel_debug_print_eax
 
     ; mov eax, 21 ; HACK
     mov ebx, disk_buffer
     call kernel_fs_load_inode
-
-    mov dword [ebx+4], 16
     
-    call kernel_debug_print_eax
-    mov ebx, disk_buffer
-    call kernel_fs_write_inode
-%endif
+    mov esi, .samplestr
+    mov edi, disk_buffer_2
+    mov ecx, 32
+    rep movsd
+    
+    mov esi, disk_buffer_2
+    mov eax, 0
+    mov edi, 0
+    xchg bx, bx
+    call kernel_fs_write_inode_block
+    
+    ; Load the init file
+    
     mov eax, 2
     mov esi, .filename
     call kernel_fs_get_path_inode
@@ -169,4 +174,7 @@ align 16
 disk_buffer:
     times 2048   db 0
     
+align 16
+disk_buffer_2:
+    times 2048   db 0
 hello_string db "Hello, kernel World!", 0xA, 0 ; 0xA = line feed

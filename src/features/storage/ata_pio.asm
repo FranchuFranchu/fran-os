@@ -34,7 +34,7 @@ ata_pio_error:
     popa
     jmp kernel_halt
     
-.fatalerr: db "Fatal disk reading error! Use a debugger to see the state of the registers"
+.fatalerr: db "Fatal disk reading error! Use a debugger to see the state of the registers", 0
 
 ; IN = EDI: Disk buffer, ESI: LBA address (as an immediate value, not the location of the value), ECX: Amount of sectors to load
 ; OUT = Disk buffer filled. Carry set if driver is busy

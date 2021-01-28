@@ -33,9 +33,10 @@ kernel_sysenter_entry_point:
     call [kernel_system_calls+ebx*4]
     
     sysexit
-.out_of_range:
+.out_of_range: 
     stc
     sysexit
+    
 
 
     .teststr dd "Sysenter executed correctly!", 0

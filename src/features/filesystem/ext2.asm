@@ -517,6 +517,8 @@ kernel_fs_write_inode:
 
     mov ecx, eax ; Block offset
 
+    mov eax, edx
+    call kernel_debug_print_eax
     pop eax ; Inode number
     push edx ; Byte offset
 
@@ -796,6 +798,31 @@ kernel_fs_load_inode_block:
 
     call kernel_fs_load_block
     mov ebx, disk_buffer
+
+    jmp .ok
+.fail:
+    pop edi
+    stc
+    jmp .done
+.ok:
+    clc
+.done:
+    ret
+
+
+
+; IN = EBX: points to the inode, EAX: Block number, EDI: Offset, ESI: Points to the new block data
+kernel_fs_write_inode_block:
+    push edi
+
+    call kernel_fs_get_file_block
+    jc .fail
+
+    mov ebx, disk_buffer
+    pop edi
+    
+    mov ebx, esi
+    call kernel_fs_write_block
 
     jmp .ok
 .fail:
