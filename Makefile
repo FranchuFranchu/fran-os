@@ -4,12 +4,12 @@ ASSEMBLER_FLAGS = -Imacros/
 
 
 
-all: os
+all: os_grub
 
 src/boot.o: src/boot.asm
 	nasm $(ASSEMBLER_FLAGS) -felf32 src/boot.asm -o src/boot.o
 
-src/kernel.o: $(shell find src | tr "\n" " ")
+src/kernel.o: $(shell find src -name "*.asm" | sed -e 's/ /\\ /' | tr "\n" " " )
 	nasm $(ASSEMBLER_FLAGS) -felf32 src/kernel.asm -o src/kernel.o -Isrc/
 
 disk-images/os_kernel.img: src/kernel.o src/boot.o
@@ -45,11 +45,11 @@ disk-images/os_hdb.img: $(shell find guest-filesystem)
 	sudo umount tmp-loop || exit
 
 
-isodir/boot/os.bin: disk-images/os_kernel.img
+isodir/boot/os_grub.bin: disk-images/os_kernel.img
 	mkdir -p isodir/boot/grub
-	cp disk-images/os_kernel.img isodir/boot/os.bin
+	cp disk-images/os_kernel.img isodir/boot/os_grub.bin
 
-disk-images/os_hda.img: isodir/boot/os.bin
+disk-images/os_hda.img: isodir/boot/os_grub.bin
 	grub-mkrescue -o disk-images/os_hda.img isodir
 
 clear_images:
@@ -61,27 +61,31 @@ macros:
 	make -C macros
 	make -C guest-filesystem/core_packages
 
-os: macros disk-images/os_hda.img disk-images/os_hdb.img
+.PHONY: os_grub
+.PHONY: os_kernel
+	
+os_grub: macros disk-images/os_hda.img disk-images/os_hdb.img
+os_kernel: macros disk-images/os_kernel.img disk-images/os_hdb.img
 
 
-bochs: os
+bochs: os_grub
 	bochs -f bochsrc
 
-qemu: os
-	qemu-system-i386   \
+qemu: os_kernel
+	qemu-system-i386 \
         -monitor stdio \
-        -drive file=disk-images/os_hda.img,format=raw,index=0,media=disk \
+        -kernel disk-images/os_kernel.img \
         -drive file=disk-images/os_hdb.img,format=raw,index=1,media=disk \
         -d int,guest_errors \
         -D log.log \
         -m 64M \
-        -serial file:serial.log
+        -serial file:serial.log 
 
-qemugdb: os
+qemugdb: os_kernel
 	gnome-terminal -- gdb --eval-command="target remote localhost:1234"
 	qemu-system-i386   \
         -s \
-        -drive file=disk-images/os_hda.img,format=raw,index=0,media=disk \
+        -kernel disk-images/os_kernel.img \
         -drive file=disk-images/os_hdb.img,format=raw,index=1,media=disk \
         -d int,guest_errors \
         -D log.log \

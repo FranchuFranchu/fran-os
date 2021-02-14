@@ -2,7 +2,7 @@
 ; - 0x00000000 to 0xC0000000 :
 ;   - userspace processes
 ; - 0xC0000000 to 0xFFFFFFFF :
-;   - userspace processes
+;   - kernel
 
 
 
@@ -32,6 +32,8 @@ BITS 32
 %include "features/userspace.asm"
 %include "features/sysenter.asm"
 
+%include "features/acpi/rdsp.asm"
+
 extern kernel_multiboot_info_pointer
 extern gdt_desc
 global kernel_main
@@ -49,7 +51,7 @@ kernel_main:
     call kernel_keyboard_setup
     call kernel_paging_setup
 
-    ;call kernel_font_setup
+    call kernel_font_setup
     call kernel_ata_pio_setup
     call kernel_sysenter_setup
     call kernel_fs_setup
@@ -76,11 +78,9 @@ kernel_main:
     mov esi, disk_buffer_2
     mov eax, 0
     mov edi, 0
-    xchg bx, bx
     call kernel_fs_write_inode_block
     
     ; Load the init file
-    
     mov eax, 2
     mov esi, .filename
     call kernel_fs_get_path_inode
@@ -100,7 +100,7 @@ kernel_main:
     mov edi, ebx
     mov ecx, 1024
     rep movsd
-
+    
     jmp kernel_switch_to_userspace
 
 

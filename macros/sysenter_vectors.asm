@@ -35,7 +35,8 @@
 
 ; Copies the whole stream descriptor to memory, then creates a new process from it.
 ; IN = esi: Stream descriptor
-%define os_execute_and_fork 9
+; OUT = eax: New PID
+%define os_fork_and_execute 9
 
 ; Forks another process from the current process. Processes don't share code, data or stack
 ; OUT = eax: New thread ID if it's the new process, else 0
@@ -44,4 +45,15 @@
 ; Forks another thread from the current thread. Threads share code and data, but not stack.
 ; OUT = eax: New thread ID if it's the new thread, else 0
 %define os_fork_thread 11
+
+; IN = eax: Stream descriptor, ecx: Bitmask specifying where the interactions to accept are set and the interactions to reject are cleared
+%define os_set_stream_interactions 12
+
+; IN = eax: Stream descriptor
+; OUT = eax: Interaction bitmask set by the peer
+%define os_get_stream_interactions 13
+
+; Waits for the peer to set or clear flags, then sets the values at "edi" to the result of the interactions
+; IN = eax: Stream descriptor, ecx: Bitmask specifying the necessary interactions, edx: Bitmask specifying which of those interactions need to be cleared or set
+%define os_wait_for_interaction 14
 

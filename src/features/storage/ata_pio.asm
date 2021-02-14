@@ -16,10 +16,30 @@ kernel_ata_pio_setup:
     ret
 
 %macro kernel_ata_pio_poll 0
+    mov dx, ATA_PRIMARY_CONTROL
 %%poll:
-    in al, dx  
-    test al, 0x21 ; Only break out of loop when neither ERR nor DF are set
+    in al, dx
+    
+    test al, 0x21 ; Test if either ERR or DF is set
+    jnz ata_pio_error
+    
+    test al, 0x08 ; Test if DRQ is set
+    jz %%poll
+%%end:
+%endmacro
+    
+    
+%macro kernel_ata_pio_poll_nodrq 0
+    mov dx, ATA_PRIMARY_CONTROL
+%%poll:
+    in al, dx
+    
+    test al, 0x21 ; Test if either ERR or DF is set
+    jnz ata_pio_error
+    
+    test al, 0x80 ; Test if BSY is not set
     jnz %%poll
+%%end:
 
 
 %endmacro
@@ -85,17 +105,8 @@ kernel_ata_pio_read:
     mov     al, 0x20          ; Read sectors
     out     dx, al
 
-    mov     dx, ATA_PRIMARY_DATA + 7 ; Status port
     
-.poll:
-    je .stoppolling
-    in  al, dx  
-    
-    test al, 0x80 ; Test if BSY is set
-    jnz .poll
-    
-    test al, 0x21 ; Test if either ERR or DF is set
-    jnz ata_pio_error
+    kernel_ata_pio_poll
     
 .stoppolling:
 
@@ -160,25 +171,22 @@ kernel_ata_pio_write:
     mov     dx, ATA_PRIMARY_DATA + 7 ; Command port
     mov     al, 0x30          ; Write sectors
     out     dx, al
-
-
-    mov     dx, ATA_PRIMARY_DATA + 7 ; Status port
-
+    
+    
     kernel_ata_pio_poll
-
-
+    
     int 2eh
-
+    
     mov     dx, ATA_PRIMARY_DATA + 7 ; Command port
     mov     al, 0xe7          ; Cache flush, sometimes needed
     out     dx, al
-
-    kernel_ata_pio_poll
-
-
-
+    
+    kernel_ata_pio_poll_nodrq
+    
+    
+    
     clc
-
+    
     popa
     ret
 .busy:
@@ -191,7 +199,7 @@ kernel_ata_pio_pointer_to_buffer dd 0
 
 kernel_ata_pio_irq_handler:
     pusha
-
+    
     cmp byte [kernel_ata_pio_writing], 0
     jne .write
 

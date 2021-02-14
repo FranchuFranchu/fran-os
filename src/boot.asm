@@ -55,6 +55,8 @@ page_directory:
     dd 0x00400083
     dd 0x00800083
     dd 0x00C00083
+    dd 0x01000083
+    dd 0x01400083
     times (1024 - KERNEL_PAGE_NUMBER - 1) dd 0  ; Pages after the kernel image.
  
 ; The linker script specifies _start as the entry point to the kernel and the

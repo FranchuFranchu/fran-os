@@ -8,6 +8,7 @@
 ;  - ECX
 ;  - EDX
 
+%include "features/stream descriptors/structure.asm"
 
 kernel_syscall_no_operation:
     ret
@@ -48,15 +49,21 @@ kernel_syscall_close:
 kernel_syscall_execute:
     ret
 
-kernel_syscall_execute_and_fork:
+kernel_syscall_fork_and_execute:
     ret
-
 
 kernel_syscall_fork_process:
     ret
 
 
 kernel_syscall_fork_thread:
+    ret
+
+kernel_syscall_set_stream_interactions:
+    ret
+kernel_syscall_get_stream_interactions:
+    ret
+kernel_syscall_wait_for_interaction:
     ret
 
 

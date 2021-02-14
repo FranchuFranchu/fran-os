@@ -1,7 +1,6 @@
 no_operation:
   doc: Does nothing
 
-
 debug_print_eax:
   doc: Dumps the EAX register
   in:
@@ -11,7 +10,6 @@ terminate_process:
   doc: Makes the CPU sleep
   in:
     eax: Status code
-
 
 read:
   in:
@@ -51,10 +49,12 @@ execute:
   in: 
     esi: Stream descriptor
 
-execute_and_fork:
+fork_and_execute:
   doc: Copies the whole stream descriptor to memory, then creates a new process from it.
   in: 
     esi: Stream descriptor
+  out:
+    eax: New PID
 
 fork_process:
   doc: Forks another process from the current process. Processes don't share code, data or stack
@@ -66,7 +66,21 @@ fork_thread:
   out:
     eax: New thread ID if it's the new thread, else 0
 
+set_stream_interactions:
+  in:
+    eax: Stream descriptor
+    ecx: Bitmask specifying where the interactions to accept are set and the interactions to reject are cleared
 
+get_stream_interactions:
+  in:
+    eax: Stream descriptor
+  out:
+    eax: Interaction bitmask set by the peer
 
-
-
+wait_for_interaction:
+  doc: Waits for the peer to set or clear flags, then sets the values at "edi" to the result of the interactions
+  in:
+    eax: Stream descriptor
+    ecx: Bitmask specifying the necessary interactions
+    edx: Bitmask specifying which of those interactions need to be cleared or set
+    

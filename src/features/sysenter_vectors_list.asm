@@ -10,8 +10,11 @@ kernel_system_calls:
     dd kernel_syscall_close ; 6
     dd kernel_syscall_open_filesystem_file ; 7
     dd kernel_syscall_execute ; 8
-    dd kernel_syscall_execute_and_fork ; 9
+    dd kernel_syscall_fork_and_execute ; 9
     dd kernel_syscall_fork_process ; 10
     dd kernel_syscall_fork_thread ; 11
+    dd kernel_syscall_set_stream_interactions ; 12
+    dd kernel_syscall_get_stream_interactions ; 13
+    dd kernel_syscall_wait_for_interaction ; 14
 
 kernel_system_calls_end:
