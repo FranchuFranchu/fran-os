@@ -73,7 +73,7 @@ kernel_terminal_getidx:
     push eax; preserve registers
     push ebx
     ;xchg dl, dh
-
+    and edx, 0xFFFF
 
     mov al, VGA_WIDTH
     mul dl
@@ -105,7 +105,7 @@ kernel_terminal_putentryat:
     pusha
     call kernel_terminal_getidx
     mov ebx, edx
-
+    
     mov dl, [kernel_terminal_color]
     mov byte [VGA_BUFFER + ebx], al
     mov byte [VGA_BUFFER + 1 + ebx], dl
