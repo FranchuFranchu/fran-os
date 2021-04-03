@@ -10,11 +10,15 @@ section .text
 
 BITS 32
 
+
 %define MULTIBOOT_SIZE 16
 %define BASE_OF_SECTION 0;0x100000 + MULTIBOOT_SIZE
 
+%define KERNEL_BASE 0xC0000000
+
 %include "features/idt.asm"
 
+%include "features/misc macros.asm"
 %include "features/cpuid.asm"
 %include "features/debugging.asm"
 %include "features/eventqueue.asm"
@@ -25,6 +29,8 @@ BITS 32
 %include "features/gdt.asm"
 %include "features/halt_for_key.asm"
 %include "features/keyboard.asm"
+%include "features/memory allocation/dlmalloc_binding.asm"
+%include "features/multiprocessing/mp table.asm"
 %include "features/paging/index.asm"
 %include "features/storage/ata_pio.asm"
 %include "features/string.asm"
@@ -37,6 +43,11 @@ BITS 32
 extern kernel_multiboot_info_pointer
 extern gdt_desc
 global kernel_main
+extern _kernel_end
+extern malloc
+
+extern dlmalloc
+
 kernel_main:
     lgdt [kernel_gdt_desc]
     call kernel_terminal_setup
@@ -57,11 +68,19 @@ kernel_main:
     call kernel_fs_setup
     call kernel_userspace_setup
 
+    call kernel_cpuid_print_vendor
 
     write_vga_graphics_register 0Ah, 1110b
     write_vga_graphics_register 0Bh, 1111b
+    
+    call kernel_multiprocessing_find_mp_table
 
-
+    call kernel_set_break_setup ; Needs to be called after paging
+    
+    
+    mov eax, 10
+    call kernel_malloc
+    
     mov eax, 2
     mov esi, .other_filename
     call kernel_fs_get_path_inode
@@ -90,7 +109,6 @@ kernel_main:
     mov eax, 0
 
     call kernel_fs_load_inode_block
-
 
     ; Copy file contents to ring 3 address space
 

@@ -11,30 +11,30 @@
 ; IN = eax: Status code
 %define os_terminate_process 2
 
-; IN = esi: Stream descriptor, eax: Bytes to read, edi: Buffer
+; IN = esi: Stream ID, eax: Bytes to read, edi: Buffer
 ; OUT = edi: Filled buffer, eax: Bytes read
 %define os_read 3
 
-; IN = edi: Stream descriptor, eax: Bytes to write, esi: Buffer
+; IN = edi: Stream ID, eax: Bytes to write, esi: Buffer
 ; OUT = eax: Bytes extended
 %define os_write 4
 
-; IN = esi: Stream descriptor, eax: New position in stream descriptor
+; IN = esi: Stream ID, eax: New position in Stream ID
 %define os_seek 5
 
-; IN = esi: Stream descriptor
+; IN = esi: Stream ID
 %define os_close 6
 
-; IN = esi: File path
-; OUT = edi: Stream descriptor
-%define os_open_filesystem_file 7
+; IN = esi: Argument to pass to backend (can be a path, an integer, anything basically), eax: Backend number
+; OUT = edi: Stream ID
+%define os_open 7
 
-; Copies the whole stream descriptor to memory, then replaces the process with it.
-; IN = esi: Stream descriptor
+; Copies the whole stream to memory, then replaces the process with it.
+; IN = esi: Stream ID
 %define os_execute 8
 
-; Copies the whole stream descriptor to memory, then creates a new process from it.
-; IN = esi: Stream descriptor
+; Copies the whole stream to memory, then creates a new process from it.
+; IN = esi: Stream ID
 ; OUT = eax: New PID
 %define os_fork_and_execute 9
 
@@ -46,14 +46,14 @@
 ; OUT = eax: New thread ID if it's the new thread, else 0
 %define os_fork_thread 11
 
-; IN = eax: Stream descriptor, ecx: Bitmask specifying where the interactions to accept are set and the interactions to reject are cleared
+; IN = eax: Stream ID, ecx: Bitmask specifying where the interactions to accept are set and the interactions to reject are cleared
 %define os_set_stream_interactions 12
 
-; IN = eax: Stream descriptor
+; IN = eax: Stream ID
 ; OUT = eax: Interaction bitmask set by the peer
 %define os_get_stream_interactions 13
 
 ; Waits for the peer to set or clear flags, then sets the values at "edi" to the result of the interactions
-; IN = eax: Stream descriptor, ecx: Bitmask specifying the necessary interactions, edx: Bitmask specifying which of those interactions need to be cleared or set
+; IN = eax: Stream ID, ecx: Bitmask specifying the necessary interactions, edx: Bitmask specifying which of those interactions need to be cleared or set
 %define os_wait_for_interaction 14
 

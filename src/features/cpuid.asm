@@ -1,5 +1,5 @@
-; WIP
-; OUT: EAX != 0  if cpuid available
+
+; OUT: EAX != 0 if cpuid available
 kernel_cpuid_available:
     pushfd
     pushfd                               ;Store EFLAGS
@@ -12,32 +12,22 @@ kernel_cpuid_available:
     and eax,0x00200000                   ;eax = zero if ID bit can't be changed, else non-zero
     ret
 
+kernel_cpuid_vendor_buffer times 12 db 0
 ; IN: EAX: passed to cpuid
 ; OUT: EAX, EBX, ECX, EDX: CPUID output
 kernel_cpuid:
+    cpuid
     ret
 
 kernel_cpuid_print_vendor:
-    mov eax, 80000002h
-    mov esi, 0
-    mov edi, 0
-    mov ebx, 0
-    mov ecx, 0
-    mov edx, 0
+    mov eax, 0
     cpuid
-
-    call .print_eax
-
+    mov [kernel_cpuid_vendor_buffer+0], ebx
+    mov [kernel_cpuid_vendor_buffer+4], edx
+    mov [kernel_cpuid_vendor_buffer+8], ecx
+    DEBUG_PRINT {"CPUID Vendor: ", '"'}
+    mov ecx, 12
+    mov esi, kernel_cpuid_vendor_buffer
+    call kernel_terminal_write
+    DEBUG_PRINT {'"', 0xa}
     ret
-.print_eax:
-    call kernel_terminal_putchar
-    ror eax, 8
-    call kernel_terminal_putchar
-    ror eax, 8
-    call kernel_terminal_putchar
-    ror eax, 8
-    call kernel_terminal_putchar
-    ror eax, 8
-    ret
-
-    

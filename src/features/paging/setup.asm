@@ -27,29 +27,37 @@ kernel_paging_setup:
     add ebx, 4
     cmp ebx, _kernel_page_index_end*4
     jng .fill_higher_half
-
+    
+    push ebx
+    mov ebx, [kernel_paging_page_directory+ebx]
+    and ebx, ~(4096-1)
+    add ebx, kernel_paging_page_directory
+    mov [kernel_paging_current_kernel_page_table], ebx
+    pop ebx
     
     dec ecx
 
     ; Now that we allocated the kernel text and data sections
-    ; We have to configure stuff for dynamic page allocation
+    ; We have to configure variables for dynamic page allocation
 
 .make_meta_page_table:
     mov dword [kernel_paging_page_directory+ebx], kernel_paging_meta_page_table - KERNEL_VIRTUAL_BASE
     or dword [kernel_paging_page_directory+ebx], KERNEL_PAGING_FLAG_PRESENT | KERNEL_PAGING_FLAG_READ_AND_WRITE
 
     push ebx
-
-
+    
     shr bx, 2 ; Divide by 4
     mov [kernel_paging_meta_page_table_directory_entry], bx
+    
     pop ebx
 
 .end:
     sub eax, 4096
     mov [kernel_paging_first_free_physical_memory_address], eax
-    add bx, 4
-    mov [kernel_paging_first_free_kernel_page_table], bx
+    
+    mov [kernel_paging_current_kernel_page_table], bx
+    xor bx, bx
+    mov [kernel_paging_first_free_kernel_page], bx
 
     mov dword [kernel_paging_page_directory+KERNEL_PAGE_NUMBER*4], 0x83
     ; Reload

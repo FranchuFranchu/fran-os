@@ -1,5 +1,6 @@
 ; IN = EAX: Error code
 kernel_exception_handler_page_fault:
+    jmp kernel_halt
     test eax, 0x1
     jnz .protection_fault
     jz .nonpresent
@@ -14,21 +15,44 @@ kernel_exception_handler_page_fault:
 .kernelspace:
     ; Most likely an error
     ; We haven't implemented page swapping yet
-    call kernel_exception_handler_page_fault
-
-    jmp .end
+    
+    jmp .bad_end
 
 .userspace:
     ; TODO
-    ; this will recursively call itself until it reaches the user page
+    ; this could recursively call itself until it reaches the user page
     ; very bad
     ; but works
-    call kernel_paging_new_user_page
-    jmp .end
+    ; call kernel_paging_new_user_page
+    jmp .bad_end
 
 .protection_fault:
     ; Simply stop the program
-    call kernel_exception_handler_page_fault
+    ; TODO
+    jmp .bad_end
 
+.bad_end:
+    push eax
+    call kernel_terminal_clear_screen
+
+    mov esi, .errmsg
+    mov edi, VGA_BUFFER
+    mov bl, 0x4F
+    call kernel_exception_handler_print_string
+    
+    ; Print error code
+    pop eax
+    mov byte [kernel_terminal_row], 10
+    call kernel_debug_print_eax
+    
+    mov ebx, cr2
+    mov eax, ebx
+    call kernel_debug_print_eax
+    
+    
+    call kernel_exception_fault
+    
+    jmp kernel_halt
+    .errmsg: db "Page fault", 0
 .end:
     ret

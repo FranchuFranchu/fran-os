@@ -18,7 +18,8 @@ kernel_exception_fault:
     mov esi, .errmsg5
     mov edi, VGA_BUFFER + VGA_WIDTH * 2 * 5
     call kernel_exception_handler_print_string
-
+    
+    
     .waitfork:
     call kernel_halt_for_key
 
@@ -505,13 +506,9 @@ kernel_exception_handler_0d:
 kernel_exception_handler_0e:
     mov [.tmp], eax
     pop eax
-    pusha
     call kernel_exception_handler_page_fault
-    popa
-
-    mov eax, [.tmp]
     iret
-
+    
     .tmp dd 0
 
     .errmsg db "Exception 0x0e: Page Fault",0

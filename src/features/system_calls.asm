@@ -8,7 +8,7 @@
 ;  - ECX
 ;  - EDX
 
-%include "features/stream descriptors/structure.asm"
+%include "features/streams/structure.asm"
 
 kernel_syscall_no_operation:
     ret
@@ -39,7 +39,7 @@ kernel_syscall_seek:
     ret
 
 
-kernel_syscall_open_filesystem_file:
+kernel_syscall_open:
     ret
 
 
