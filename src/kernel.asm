@@ -84,6 +84,7 @@ kernel_main:
     mov eax, 2
     mov esi, .other_filename
     call kernel_fs_get_path_inode
+    
 
     ; mov eax, 21 ; HACK
     mov ebx, disk_buffer

@@ -8,15 +8,16 @@ kernel_switch_to_userspace:
     mov ds,ax
     mov es,ax 
     mov fs,ax 
-    mov gs,ax ;we don't need to worry about SS. it's handled by iret
+    mov gs,ax ; we don't need to worry about SS. it's handled by iret
 
     mov eax,esp
-    push 0x23 ;u ser data segment with bottom 2 bits set for ring 3
+    push 0x23 ; user data segment with bottom 2 bits set for ring 3
     push eax ; push our current ss for the iret stack frame
     pushf
-    push 0x1B; ;u ser code segment with bottom 2 bits set for ring 3
+    push 0x1B; ; user code segment with bottom 2 bits set for ring 3
     push ebx ; may need to remove the _ for this to work right 
-      
+    
+    xchg bx, bx
     iret
 
 kernel_task_state_segment:

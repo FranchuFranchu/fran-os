@@ -1,6 +1,5 @@
 ; IN = EAX: Error code
 kernel_exception_handler_page_fault:
-    jmp kernel_halt
     test eax, 0x1
     jnz .protection_fault
     jz .nonpresent
