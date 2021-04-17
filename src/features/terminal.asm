@@ -159,8 +159,9 @@ kernel_terminal_putchar:
 
     cmp dl, VGA_HEIGHT
     jne .cursor_moved
-
-    mov dl, 0
+    
+    mov eax, 1
+    call kernel_terminal_scroll_down
 
 .backspace:
     mov al, 0
@@ -243,6 +244,36 @@ kernel_terminal_write_string:
     pusha
     call kernel_terminal_strlen
     call kernel_terminal_write
+    popa
+    ret
+
+; IN = EAX: How much to scroll down by
+kernel_terminal_scroll_down:
+    pusha
+    
+    ; We will copy everything a few bytes before so that it's displayed above its current position
+    ; The amount of bytes to shift everything by is VGA_WIDTH * eax * 2
+    
+    ; Each character is two bytes
+    shl eax, 1
+    
+    
+    ; Get the byte that will be at VGA_BUFFER after the operation 
+    xor edx, edx
+    mov ebx, VGA_WIDTH
+    mul ebx
+    
+    mov esi, VGA_BUFFER
+    add esi, eax
+    
+    ; How 
+    mov ecx, VGA_WIDTH * VGA_HEIGHT
+    sub ecx, eax
+    
+    mov edi, VGA_BUFFER
+    
+    rep movsd
+    
     popa
     ret
 

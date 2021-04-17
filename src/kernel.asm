@@ -123,7 +123,7 @@ kernel_main:
     jmp kernel_switch_to_userspace
 
 
-.filename db "core_packages/bin/init", 0
+.filename db "Packages/Init/bin/init", 0
 .other_filename db "testdir/file.txt"
 .samplestr db "The mitochondria is the powerhouse of the cell", 0
 

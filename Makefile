@@ -66,7 +66,7 @@ clear_images:
 .PHONY: macros
 macros:
 	make -C macros
-	make -C guest-filesystem/core_packages
+	make -C guest-filesystem/Packages/Init
 
 .PHONY: os_grub
 .PHONY: os_kernel
