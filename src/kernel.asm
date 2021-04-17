@@ -33,6 +33,7 @@ BITS 32
 %include "features/multiprocessing/mp table.asm"
 %include "features/paging/index.asm"
 %include "features/storage/ata_pio.asm"
+%include "features/streams/backends.asm"
 %include "features/string.asm"
 %include "features/terminal.asm"
 %include "features/userspace.asm"

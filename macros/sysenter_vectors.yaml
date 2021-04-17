@@ -41,7 +41,9 @@ close:
 open:
   in:
     esi: Argument to pass to backend (can be a path, an integer, anything basically)
-    eax: Backend number
+    edi: Backend number
+    eax: "Flags"
+    ebp: "Flags 2"
   out:
     edi: Stream ID
 

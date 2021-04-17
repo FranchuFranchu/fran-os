@@ -25,7 +25,7 @@
 ; IN = esi: Stream ID
 %define os_close 6
 
-; IN = esi: Argument to pass to backend (can be a path, an integer, anything basically), eax: Backend number
+; IN = esi: Argument to pass to backend (can be a path, an integer, anything basically), edi: Backend number, eax: Flags, ebp: Flags 2
 ; OUT = edi: Stream ID
 %define os_open 7
 

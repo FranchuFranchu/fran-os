@@ -40,6 +40,25 @@ kernel_syscall_seek:
 
 
 kernel_syscall_open:
+    ; EDI is the backend number
+    ; Make sure it's not too large
+    cmp ebx, kernel_stream_backend_map_size
+    jge .out_of_range
+    
+    ; Load the backend struct pointer
+    mov ebx, [kernel_stream_backend_map+edi*4]
+    cmp ebx, 0
+    ; If it's zero, then it's null
+    jz .null_backend
+    
+    mov ebx, [ebx+kernel_stream_backend_struct.open]
+    call ebx
+    ret
+.out_of_range:
+    mov eax, -2
+    ret
+.null_backend:
+    mov eax, -3
     ret
 
 

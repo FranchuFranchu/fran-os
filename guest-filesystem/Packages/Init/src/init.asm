@@ -3,6 +3,8 @@ BITS 32
 %include "userspace/system_calls.asm"
 
 start:
+	mov edi, 1 ; Open backend number 1
+    system_call os_open
     mov esi, test_string
     mov eax, test_string_end - test_string
     mov edi, 0
