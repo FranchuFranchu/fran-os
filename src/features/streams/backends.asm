@@ -13,4 +13,4 @@ kernel_stream_backend_map:
 	dd kernel_test_backend_test_struct ; 1
 kernel_stream_backend_map_end:
 
-%define kernel_stream_backend_map_size ((kernel_stream_backend_map_end - kernel_stream_backend_map) / 4)
+%define kernel_stream_backend_map_size ((kernel_stream_backend_map_end - kernel_stream_backend_map) / 4 + 1)

@@ -1,6 +1,6 @@
 CC = /usr/local/cross/bin/i686-elf-gcc
 ASSEMBLER_FLAGS = -Imacros/
-
+QEMU = qemu-system-x86_64
 
 
 
@@ -79,7 +79,7 @@ bochs: os_grub
 	bochs -f bochsrc
 
 qemu: os_kernel
-	qemu-system-i386 \
+	$(QEMU) \
         -monitor stdio \
         -kernel disk-images/os_kernel.img \
         -drive file=disk-images/os_hdb.img,format=raw,index=1,media=disk \
@@ -94,7 +94,7 @@ qemugdb: os_kernel
 	gnome-terminal -- gdb \
 		--eval-command="target remote localhost:1234" \
 		--eval-command="symbol-file disk-images/os_kernel.o"
-	qemu-system-i386   \
+	$(QEMU)   \
         -s \
         -monitor stdio \
         -kernel disk-images/os_kernel.img \
