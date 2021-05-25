@@ -47,11 +47,11 @@
 %define os_fork_thread 11
 
 ; IN = eax: Stream ID, ecx: Bitmask specifying where the interactions to accept are set and the interactions to reject are cleared
-%define os_set_stream_interactions 12
+%define os_set_file_descriptor_interactions 12
 
 ; IN = eax: Stream ID
 ; OUT = eax: Interaction bitmask set by the peer
-%define os_get_stream_interactions 13
+%define os_get_file_descriptor_interactions 13
 
 ; Waits for the peer to set or clear flags, then sets the values at "edi" to the result of the interactions
 ; IN = eax: Stream ID, ecx: Bitmask specifying the necessary interactions, edx: Bitmask specifying which of those interactions need to be cleared or set

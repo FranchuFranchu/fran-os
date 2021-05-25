@@ -10,19 +10,26 @@ section .text
  
 BITS 32
 
+%define da dd
+%define resa resd
+
 
 %define MULTIBOOT_SIZE 16
 %define BASE_OF_SECTION 0;0x100000 + MULTIBOOT_SIZE
 
 %define KERNEL_BASE 0xC0000000
 
-%include "features/idt.asm"
-
+; Macros need to be defined early on
 %include "features/misc macros.asm"
+
+%include "features/idt.asm"
+%include "features/acpi/rdsp.asm"
 %include "features/cpuid.asm"
+%include "features/data structures/vec.asm"
 %include "features/debugging.asm"
 %include "features/eventqueue.asm"
 %include "features/exception_handler.asm"
+%include "features/file descriptors/backends.asm"
 %include "features/filesystem/ext2.asm"
 %include "features/filesystem/path.asm"
 %include "features/font.asm"
@@ -33,21 +40,15 @@ BITS 32
 %include "features/multiprocessing/mp table.asm"
 %include "features/paging/index.asm"
 %include "features/storage/ata_pio.asm"
-%include "features/streams/backends.asm"
 %include "features/string.asm"
 %include "features/terminal.asm"
 %include "features/userspace.asm"
 %include "features/sysenter.asm"
 
-%include "features/acpi/rdsp.asm"
-
 extern kernel_multiboot_info_pointer
 extern gdt_desc
 global kernel_main
 extern _kernel_end
-extern malloc
-
-extern dlmalloc
 
 kernel_main:
     lgdt [kernel_gdt_desc]

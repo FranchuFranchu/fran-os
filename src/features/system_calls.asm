@@ -8,7 +8,7 @@
 ;  - ECX
 ;  - EDX
 
-%include "features/streams/structure.asm"
+%include "features/file descriptors/structure.asm"
 
 kernel_syscall_no_operation:
     ret
@@ -43,20 +43,33 @@ kernel_syscall_open:
     ; EDI is the backend number
     ; Make sure it's not too large
     mov ebx, edi
-    cmp ebx, kernel_stream_backend_map_size
+    cmp ebx, kernel_file_descriptor_backend_map_size
     jg .out_of_range
     
     ; Load the backend struct pointer
-    mov ebx, [kernel_stream_backend_map+edi*4]
+    mov ebx, [kernel_file_descriptor_backend_map+edi*4]
     cmp ebx, 0
     
     ; If it's zero, then it's null
     jz .null_backend
     
-    mov ebx, [ebx+kernel_stream_backend_struct.open]
+    mov ebx, [ebx+kernel_file_descriptor_backend_struct.open]
+    
+    ; EBX now has the open function
+    ; Allocate the file descriptor
+    push ebx
+    mov ebx, fd_list
+    call kernel_debug_print_eax
+    mov eax, ebx
+    call kernel_debug_print_eax
+    call kernel_data_structure_vec_first_free
+    pop ebx
+    
+    
+    
     call ebx
     ret
-    
+
 .out_of_range:
     mov eax, -2
     ret
@@ -64,6 +77,9 @@ kernel_syscall_open:
     mov eax, -3
     ret
 
+; TODO make this process-specific
+fd_list: db kernel_data_structure_vec.size
+    
 
 kernel_syscall_close:
     ret
@@ -81,9 +97,9 @@ kernel_syscall_fork_process:
 kernel_syscall_fork_thread:
     ret
 
-kernel_syscall_set_stream_interactions:
+kernel_syscall_set_file_descriptor_interactions:
     ret
-kernel_syscall_get_stream_interactions:
+kernel_syscall_get_file_descriptor_interactions:
     ret
 kernel_syscall_wait_for_interaction:
     ret

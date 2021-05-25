@@ -21,6 +21,12 @@ kernel_sysenter_setup:
     mov edx, 0
     mov ecx, KERNEL_MSR_IA32_SYSENTER_EIP
     wrmsr
+    
+    ; Allocate some things
+    mov eax, 10
+    mov ebx, fd_list
+    call kernel_data_structure_vec_initialize
+    
     ret
 
 

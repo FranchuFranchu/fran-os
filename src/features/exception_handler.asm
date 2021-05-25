@@ -1,7 +1,6 @@
 
 
 kernel_exception_fault:
-
     mov bl, 0x4F
     mov esi, .errmsg2
     mov edi, VGA_BUFFER + VGA_WIDTH * 2 * 2
