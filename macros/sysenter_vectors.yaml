@@ -13,7 +13,7 @@ terminate_process:
 
 read:
   in:
-    esi: Stream ID
+    esi: File descriptor
     eax: Bytes to read
     edi: Buffer
   out:
@@ -22,7 +22,7 @@ read:
 
 write:
   in:
-    edi: Stream ID
+    edi: File descriptor
     eax: Bytes to write
     esi: Buffer
   out:
@@ -30,13 +30,13 @@ write:
 
 seek:
   in:
-    esi: Stream ID
-    eax: New position in Stream ID
+    esi: File descriptor
+    eax: New position in File descriptor
   out:
 
 close:
   in:
-    esi: Stream ID
+    esi: File descriptor
 
 open:
   in:
@@ -45,17 +45,17 @@ open:
     eax: "Flags"
     ebp: "Flags 2"
   out:
-    edi: Stream ID
+    edi: File descriptor
 
 execute:
-  doc: Copies the whole stream to memory, then replaces the process with it.
+  doc: Copies the whole file descriptor contents to memory, then replaces the process with it.
   in: 
-    esi: Stream ID
+    esi: File descriptor
 
 fork_and_execute:
-  doc: Copies the whole stream to memory, then creates a new process from it.
+  doc: Copies the whole file descriptor contents to memory, then creates a new process from it.
   in: 
-    esi: Stream ID
+    esi: File descriptor
   out:
     eax: New PID
 
@@ -71,19 +71,19 @@ fork_thread:
 
 set_file_descriptor_interactions:
   in:
-    eax: Stream ID
+    eax: File descriptor
     ecx: Bitmask specifying where the interactions to accept are set and the interactions to reject are cleared
 
 get_file_descriptor_interactions:
   in:
-    eax: Stream ID
+    eax: File descriptor
   out:
     eax: Interaction bitmask set by the peer
 
 wait_for_interaction:
   doc: Waits for the peer to set or clear flags, then sets the values at "edi" to the result of the interactions
   in:
-    eax: Stream ID
+    eax: File descriptor
     ecx: Bitmask specifying the necessary interactions
     edx: Bitmask specifying which of those interactions need to be cleared or set
     

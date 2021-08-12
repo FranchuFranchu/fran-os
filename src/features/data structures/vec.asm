@@ -86,8 +86,7 @@ kernel_data_structure_vec_first_free:
 .dont_allocate_more:
 	; Add item at the end
 	inc dword [ebx+kernel_data_structure_vec.length]
-	mov ebx, [ebx+kernel_data_structure_vec.data]
-	add ebx, [ebx+kernel_data_structure_vec.length]
+	mov ebx, [ebx+kernel_data_structure_vec.length]
 	dec ebx
 	
 	

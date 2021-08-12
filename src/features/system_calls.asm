@@ -56,19 +56,37 @@ kernel_syscall_open:
     mov ebx, [ebx+kernel_file_descriptor_backend_struct.open]
     
     ; EBX now has the open function
-    ; Allocate the file descriptor
+    ; Allocate a file descriptor
     push ebx
     mov ebx, fd_list
-    call kernel_debug_print_eax
-    mov eax, ebx
-    call kernel_debug_print_eax
     call kernel_data_structure_vec_first_free
+    ; Store the file descriptor number in EDI.
+    mov edi, ebx
+    ; Then get the pointer to the file descriptor structure
+    ; its null or garbage right now though, since we havent allocated anything for the data
+    mov ebx, [fd_list+kernel_data_structure_vec.data]
+    
+    ; Allocate the struct
+    push eax
+    mov eax, file_descriptor.size
+    call kernel_malloc
+    ; Now eax contains the fd pointer
+    ; Store it
+    mov [ebx+edi*4], eax
+    pop eax
+    
+    ; (for handing over to the open function)
+    mov edi, eax
+    
     pop ebx
     
-    
-    
     call ebx
+    
+    ; Get the fd number back again
+    mov edi, [edi+file_descriptor.number]
+    
     ret
+
 
 .out_of_range:
     mov eax, -2
